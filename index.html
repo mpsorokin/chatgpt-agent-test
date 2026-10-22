@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#10131b" />
+  <title>Ship It — ChatGPT GitHub Test</title>
+  <style>
+    :root { color-scheme: dark; font: 16px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; color: #e9ecf5; background: radial-gradient(circle at 20% 0%, #263253 0, transparent 38%), #10131b; }
+    main { max-width: 720px; margin: 0 auto; padding: 72px 22px; }
+    .eyebrow { color: #a8b6ff; font-size: .76rem; letter-spacing: .18em; font-weight: 800; text-transform: uppercase; }
+    h1 { margin: 10px 0 4px; font-size: clamp(2.4rem, 7vw, 4.3rem); line-height: 1.05; letter-spacing: -.05em; }
+    .subtitle { color: #a4acc0; margin: 14px 0 36px; max-width: 510px; }
+    .panel { border: 1px solid #35405d; background: #191e2cde; border-radius: 20px; padding: 24px; box-shadow: 0 24px 70px #0004; }
+    .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 22px; }
+    h2 { margin: 0; font-size: 1.15rem; }
+    .count { color: #c2ccff; background: #303b60; border-radius: 999px; padding: 5px 12px; font-size: .85rem; }
+    form { display: flex; gap: 9px; }
+    input { flex: 1; min-width: 0; border: 1px solid #434e69; border-radius: 11px; padding: 13px; color: white; background: #111622; font: inherit; }
+    input:focus-visible, button:focus-visible { outline: 2px solid #a7afff; outline-offset: 3px; }
+    button { cursor: pointer; border: 0; font: inherit; font-weight: 700; border-radius: 11px; padding: 12px 18px; }
+    .primary { color: #10131b; background: #a4b5ff; }
+    .primary:hover { background: #c2cdff; }
+    .filters { display: flex; gap: 7px; margin-top: 20px; }
+    .filter { color: #aeb7cc; background: #272e40; font-size: .84rem; padding: 7px 13px; }
+    .filter[aria-pressed="true"] { color: white; background: #45598b; }
+    ul { padding: 0; margin: 14px 0 0; list-style: none; }
+    li { display: flex; align-items: center; gap: 12px; border-top: 1px solid #343b4c; padding: 14px 0; }
+    li input[type="checkbox"] { flex: none; width: 18px; height: 18px; accent-color: #a4b5ff; cursor: pointer; }
+    .task-label { overflow-wrap: anywhere; flex: 1; }
+    li.done .task-label { text-decoration: line-through; color: #838da1; }
+    .remove { padding: 5px 10px; color: #e8a9ae; background: #392b37; font-size: .8rem; }
+    .remove:hover { background: #553745; }
+    #empty { text-align: center; color: #8f9ab0; padding: 30px 0 10px; }
+    footer { text-align: center; color: #8d99b1; margin-top: 25px; font-size: .85rem; }
+    footer a { color: #bac7ff; }
+    @media(max-width: 420px) { .panel { padding: 17px; } form { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">GitHub × ChatGPT · Integration experiment</p>
+    <h1>Ship It 🚀</h1>
+    <p class="subtitle">A tiny task board written and committed directly from ChatGPT. No frameworks, no build step, no backend.</p>
+    <section class="panel" aria-labelledby="board-title">
+      <div class="top"><h2 id="board-title">Your tasks</h2><span class="count" id="count" aria-live="polite"></span></div>
+      <form id="task-form">
+        <input id="task-input" name="task" placeholder="What needs shipping?" aria-label="New task" maxlength="160" required autocomplete="off" />
+        <button class="primary" type="submit">Add task +</button>
+      </form>
+      <div class="filters" role="group" aria-label="Filter tasks">
+        <button class="filter" type="button" data-filter="all" aria-pressed="true">All</button>
+        <button class="filter" type="button" data-filter="active" aria-pressed="false">Active</button>
+        <button class="filter" type="button" data-filter="done" aria-pressed="false">Done</button>
+      </div>
+      <ul id="tasks" aria-label="Tasks"></ul>
+      <p id="empty" hidden>No tasks here. Add your first one ✨</p>
+    </section>
+    <footer>Changes persist in your browser using localStorage · <a href="https://github.com/mpsorokin/chatgpt-agent-test">View source on GitHub</a></footer>
+  </main>
+  <script>
+    (() => {
+      "use strict";
+      const KEY = "chatgpt-agent-test:tasks:v1";
+      const list = document.querySelector("#tasks");
+      const count = document.querySelector("#count");
+      const empty = document.querySelector("#empty");
+      const input = document.querySelector("#task-input");
+      let filter = "all";
+      let tasks = [];
+      try {
+        const saved = JSON.parse(localStorage.getItem(KEY) || "[]");
+        if (Array.isArray(saved)) {
+          tasks = saved.filter(t => t && typeof t.id === "string" && typeof t.text === "string" && typeof t.done === "boolean");
+        }
+      } catch { /* Invalid stored data: start with a clean board. */ }
+      const save = () => {
+        try { localStorage.setItem(KEY, JSON.stringify(tasks)); }
+        catch { /* The board still works when storage is unavailable. */ }
+      };
+      function render() {
+        list.replaceChildren();
+        const visible = tasks.filter(t => filter === "all" || (filter === "done" ? t.done : !t.done));
+        count.textContent = tasks.filter(t => t.done).length + " / " + tasks.length + " done";
+        empty.hidden = visible.length !== 0;
+        for (const task of visible) {
+          const item = document.createElement("li");
+          if (task.done) item.classList.add("done");
+          const check = document.createElement("input");
+          check.type = "checkbox";
+          check.checked = task.done;
+          check.setAttribute("aria-label", "Mark " + task.text + " as " + (task.done ? "active" : "done"));
+          check.addEventListener("change", () => { task.done = check.checked; save(); render(); });
+          const label = document.createElement("span");
+          label.className = "task-label";
+          label.textContent = task.text;
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "remove";
+          remove.textContent = "Delete";
+          remove.setAttribute("aria-label", "Delete " + task.text);
+          remove.addEventListener("click", () => { tasks = tasks.filter(t => t.id !== task.id); save(); render(); });
+          item.append(check, label, remove);
+          list.append(item);
+        }
+      }
+      document.querySelector("#task-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        tasks.unshift({ id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random(), text, done: false });
+        input.value = "";
+        save();
+        render();
+        input.focus();
+      });
+      document.querySelectorAll("[data-filter]").forEach(button => {
+        button.addEventListener("click", () => {
+          filter = button.dataset.filter;
+          document.querySelectorAll("[data-filter]").forEach(b => b.setAttribute("aria-pressed", String(b === button)));
+          render();
+        });
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
