@@ -139,7 +139,7 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
   return()=>window.clearTimeout(id);
  },[stage,user,localReady,timeReady,localWorkspace,localTime,saveTick]);
  useEffect(()=>{
-  if(stage!=='ready')return;
+  if(stage!=='ready'&&stage!=='error')return;
   const handler=(event:BeforeUnloadEvent)=>{
    const changed=hasUnsavedCloudChanges(workspaceRef.current,timeRef.current,baseline.current);
    if(!saving.current&&!dirtyRef.current&&!changed)return;
@@ -150,11 +150,12 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
   return()=>window.removeEventListener('beforeunload',handler);
  },[stage]);
  const signOut=useCallback(async()=>{
-  const changed=hasUnsavedCloudChanges(workspaceRef.current,timeRef.current,baseline.current);
-  if(saving.current||dirtyRef.current||changed){
+  // During first-time setup there is no cloud baseline: allow cancelling signup.
+  const changed=stage!=='setup'&&hasUnsavedCloudChanges(workspaceRef.current,timeRef.current,baseline.current);
+  if(saving.current||(stage!=='setup'&&(dirtyRef.current||changed))){
    setError('You have unsaved changes. Wait for Supabase sync or export a backup before signing out.');return;
   }
   const {error}=await supabase.auth.signOut();if(error)setError(error.message);
- },[]);
+ },[stage]);
  return {user,stage,status,error,init,signOut,load,dirty};
 }
