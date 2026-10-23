@@ -34,6 +34,24 @@ describe('Gantt planning and sprint lifecycle',()=>{
   expect(daysBetween('2026-10-30','2026-11-02')).toBe(3);
   expect(datesForView('2026-10-30',4)).toEqual(['2026-10-30','2026-10-31','2026-11-01','2026-11-02']);
  });
+ it('includes due-only tasks as single-day Gantt milestones',()=>{
+  const onlyDue=task({id:'due-only',due:'2026-10-28',startDate:''});
+  const planned=plannedTasks([onlyDue]);
+  expect(planned).toHaveLength(1);
+  expect(planned[0]).toMatchObject({timelineStart:'2026-10-28',due:'2026-10-28',deadlineOnly:true});
+ });
+ it('immediately reflects an updated due date in Gantt selectors',()=>{
+  const initial=workspaceReducer(base,{type:'plan',id:'a',startDate:'',due:'2026-10-28',estimateHours:2,sprintId:''});
+  expect(plannedTasks(initial.tasks)[0].timelineStart).toBe('2026-10-28');
+  const changed=workspaceReducer(initial,{type:'plan',id:'a',startDate:'',due:'2026-12-01',estimateHours:2,sprintId:''});
+  expect(plannedTasks(changed.tasks)[0]).toMatchObject({due:'2026-12-01',timelineStart:'2026-12-01'});
+ });
+ it('keeps a due-only task visible when edited through the main task editor',()=>{
+  const start=workspaceReducer(base,{type:'plan',id:'a',startDate:'2026-10-30',due:'2026-11-03',estimateHours:2,sprintId:''});
+  const updated=workspaceReducer(start,{type:'upsert',id:'a',draft:{text:'Implement feature',description:'',project:'Work',priority:'high',status:'todo',due:'2026-10-28',startDate:'2026-10-30',estimateHours:2,subtasks:[]}});
+  expect(updated.tasks[0].startDate).toBe('');
+  expect(plannedTasks(updated.tasks)[0]).toMatchObject({deadlineOnly:true,due:'2026-10-28'});
+ });
  it('schedules tasks without overwriting names or existing status',()=>{
   const state=workspaceReducer(base,{type:'plan',id:'a',startDate:'2026-10-20',due:'2026-10-26',estimateHours:5.5,sprintId:'s1'});
   expect(state.tasks[0]).toMatchObject({text:'Implement feature',status:'todo',startDate:'2026-10-20',due:'2026-10-26',estimateHours:5.5,sprintId:'s1'});

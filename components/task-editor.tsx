@@ -4,12 +4,12 @@ import { CalendarDays, Check, Plus, Trash2, X } from 'lucide-react';
 import { uid, type Priority, type Project, type Status, type Subtask, type Task, type TaskDraft } from '@/lib/model';
 
 interface Props { open:boolean; task:Task|null; projects:Project[]; onClose:()=>void; onSave:(draft:TaskDraft,id?:string)=>void; onDelete:(id:string)=>void }
-const initial=(project:string):TaskDraft=>({text:'',description:'',project,priority:'medium',status:'todo',due:'',subtasks:[]});
+const initial=(project:string):TaskDraft=>({text:'',description:'',project,priority:'medium',status:'todo',due:'',startDate:'',estimateHours:0,subtasks:[]});
 export function TaskEditor({open,task,projects,onClose,onSave,onDelete}:Props){
  const ref=useRef<HTMLDialogElement>(null);
  const [draft,setDraft]=useState<TaskDraft>(()=>initial('Work'));
  const [newSubtask,setNewSubtask]=useState('');
- useEffect(()=>{setDraft(task?{text:task.text,description:task.description,project:task.project,priority:task.priority,status:task.status,due:task.due,subtasks:task.subtasks.map(s=>({...s}))}:initial(projects[0]?.id||'Work'));setNewSubtask('');},[open,task,projects]);
+ useEffect(()=>{setDraft(task?{text:task.text,description:task.description,project:task.project,priority:task.priority,status:task.status,due:task.due,startDate:task.startDate||'',estimateHours:task.estimateHours||0,subtasks:task.subtasks.map(s=>({...s}))}:initial(projects[0]?.id||'Work'));setNewSubtask('');},[open,task,projects]);
  useEffect(()=>{const d=ref.current;if(!d)return;if(open&&!d.open)d.showModal();if(!open&&d.open)d.close();},[open]);
  function update<K extends keyof TaskDraft>(key:K,value:TaskDraft[K]){setDraft(s=>({...s,[key]:value}));}
  function addSub(){const text=newSubtask.trim();if(!text)return;update('subtasks',[...draft.subtasks,{id:uid(),text:text.slice(0,140),done:false}]);setNewSubtask('');}
@@ -23,7 +23,9 @@ export function TaskEditor({open,task,projects,onClose,onSave,onDelete}:Props){
          <label className="form-field">Project <select value={draft.project} onChange={e=>update('project',e.target.value)}>{projects.map(p=><option key={p.id} value={p.id}>{p.id}</option>)}</select></label>
          <label className="form-field">Priority <select value={draft.priority} onChange={e=>update('priority',e.target.value as Priority)}><option value="high">High priority</option><option value="medium">Medium priority</option><option value="low">Low priority</option></select></label>
          <label className="form-field">Status <select value={draft.status} onChange={e=>update('status',e.target.value as Status)}><option value="todo">To do</option><option value="doing">In progress</option><option value="done">Completed</option></select></label>
-         <label className="form-field">Due date <input type="date" value={draft.due} onChange={e=>update('due',e.target.value)}/></label>
+         <label className="form-field">Due date <input type="date" value={draft.due} onChange={e=>setDraft(current=>({...current,due:e.target.value,startDate:current.startDate&&e.target.value&&current.startDate>e.target.value?'':current.startDate}))}/></label>
+         <label className="form-field">Start date (optional) <input type="date" value={draft.startDate||''} onChange={e=>setDraft(current=>({...current,startDate:e.target.value,due:current.due&&e.target.value&&e.target.value>current.due?e.target.value:current.due}))}/></label>
+         <label className="form-field">Estimate (hours) <input type="number" min="0" max="10000" step="0.5" value={draft.estimateHours??0} onChange={e=>update('estimateHours',Number(e.target.value))}/></label>
        </div>
        <div className="subtask-section"><div className="sub-head"><strong>Checklist</strong><span>{draft.subtasks.filter(s=>s.done).length}/{draft.subtasks.length} complete</span></div>
        {draft.subtasks.map(sub=><div key={sub.id} className="sub-row"><button type="button" aria-label={sub.done?'Mark checklist item incomplete':'Complete checklist item'} className={'check-toggle '+(sub.done?'checked':'')} onClick={()=>update('subtasks',draft.subtasks.map(s=>s.id===sub.id?{...s,done:!s.done}:s))}>{sub.done&&<Check size={12}/>}</button><span className={sub.done?'struck':''}>{sub.text}</span><button type="button" className="sub-remove" aria-label={'Remove '+sub.text} onClick={()=>update('subtasks',draft.subtasks.filter(s=>s.id!==sub.id))}><X size={15}/></button></div>)}

@@ -19,9 +19,13 @@ export function workspaceReducer(state:Workspace, action:Action):Workspace {
     case 'replace': return action.state;
     case 'upsert': {
       const draft=action.draft;
+      // Changing a due date in the task editor must not leave a reversed interval
+      // that makes the task disappear from the Gantt chart.
+      const startDate=draft.startDate && draft.due && draft.startDate>draft.due?'':draft.startDate;
+      const cleanDraft={...draft,...(startDate!==undefined?{startDate}:{})};
       const project=state.projects.some(p=>p.id===draft.project)?draft.project:'Work';
-      if(action.id) return {...state,tasks:state.tasks.map(t=>t.id===action.id?{...t,...draft,project,completedAt:draft.status==='done'?(t.completedAt??Date.now()):null}:t)};
-      const task:Task={...draft,project,id:uid(),created:Date.now(),completedAt:draft.status==='done'?Date.now():null};
+      if(action.id) return {...state,tasks:state.tasks.map(t=>t.id===action.id?{...t,...cleanDraft,project,completedAt:draft.status==='done'?(t.completedAt??Date.now()):null}:t)};
+      const task:Task={...cleanDraft,project,id:uid(),created:Date.now(),completedAt:draft.status==='done'?Date.now():null};
       return {...state,tasks:[task,...state.tasks]};
     }
     case 'status': return {...state,tasks:state.tasks.map(t=>t.id===action.id?{...t,status:action.status,completedAt:action.status==='done'?(t.completedAt??Date.now()):null}:t)};

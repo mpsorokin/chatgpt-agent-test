@@ -17,9 +17,15 @@ export const daysBetween=(start:string,end:string):number=>{
 export function datesForView(start:string,days:number):string[]{
  return Array.from({length:days},(_,i)=>dateKey(addDays(parseDay(start),i)));
 }
-export type PlannedTask=Task & {startDate:string;due:string};
+// Tasks with only a due date are valid one-day Gantt milestones.
+// timelineStart is derived; the user's original startDate is never overwritten.
+export type PlannedTask=Task & {timelineStart:string;due:string;deadlineOnly:boolean};
 export function plannedTasks(tasks:Task[]):PlannedTask[]{
- return tasks.filter((t):t is PlannedTask=>Boolean(t.startDate&&t.due&&validDay(t.startDate)&&validDay(t.due)&&t.startDate<=t.due));
+ return tasks.flatMap(t=>{
+  if(!validDay(t.due))return [];
+  const explicitStart=Boolean(t.startDate&&validDay(t.startDate)&&t.startDate<=t.due);
+  return [{...t,timelineStart:explicitStart?t.startDate!:t.due,deadlineOnly:!explicitStart}];
+ });
 }
 export const estimateHours=(tasks:Task[]):number=>tasks.reduce((sum,t)=>sum+(t.estimateHours||0),0);
 export function sprintStats(sprint:Sprint,tasks:Task[]){
