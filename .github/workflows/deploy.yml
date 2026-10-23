@@ -16,6 +16,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  cancel-stale-runs:
+    name: Cancel stale production builds
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Cancel older in-progress main workflow runs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const {owner,repo} = context.repo;
+            const {data} = await github.rest.actions.listWorkflowRunsForRepo({
+              owner,repo,branch:'main',status:'in_progress',per_page:50
+            });
+            for (const run of data.workflow_runs) {
+              if (run.id === context.runId || run.name !== 'Ship It - Next.js CI and Pages') continue;
+              if (run.head_sha === context.sha) continue;
+              try {
+                await github.rest.actions.cancelWorkflowRun({owner,repo,run_id:run.id});
+                core.info('Cancelled outdated run '+run.id);
+              } catch (error) {
+                core.warning('Could not cancel '+run.id+': '+error.message);
+              }
+            }
   build:
     name: Typecheck, test and build Next.js
     runs-on: ubuntu-latest
