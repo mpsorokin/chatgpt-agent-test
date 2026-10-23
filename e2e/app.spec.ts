@@ -1,4 +1,5 @@
 import { test,expect,type Page } from '@playwright/test';
+import packageJSON from '../package.json';
 
 const root='/chatgpt-agent-test';
 const accountId='11111111-1111-4111-8111-111111111111';
@@ -40,6 +41,8 @@ async function mockAuth(page:Page,options:{failSaves?:boolean}={}){
 test('public login/register/recovery URLs are real routed Next.js pages',async({page})=>{
  await page.goto(root+'/login/');
  await expect(page.getByRole('heading',{name:'Welcome back.'})).toBeVisible();
+ // Regression: UI release must reflect package.json instead of a hardcoded old version.
+ await expect(page.getByText(new RegExp('Ship It v'+packageJSON.version.replaceAll('.',String.raw`\.`)))).toBeVisible();
  await page.getByRole('link',{name:'Create an account'}).click();
  await expect(page).toHaveURL(/\/register\/?$/);
  await expect(page.getByRole('heading',{name:'Start shipping smarter.'})).toBeVisible();
@@ -63,6 +66,7 @@ test('mocked Supabase login, task creation, Gantt route and atomic save',async({
  await page.getByRole('button',{name:'Sign in'}).click();
  await expect(page).toHaveURL(/\/dashboard\/?$/);
  await expect(page.getByText('Synced with Supabase')).toBeVisible();
+ await expect(page.getByLabel(new RegExp('Ship It release v'+packageJSON.version.replaceAll('.',String.raw`\.`)))).toBeVisible();
  await page.getByRole('button',{name:/New task/i}).first().click();
  await page.getByLabel('Task name').fill('Release validation');
  await page.getByRole('button',{name:'Create task',exact:true}).click();

@@ -6,6 +6,7 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles } fro
 import { supabase } from '@/lib/supabase';
 import { absoluteAuthUrl } from '@/lib/routes';
 import { readAuthLinkError } from '@/lib/auth-errors';
+import { RELEASE_LABEL } from '@/lib/build-info';
 
 type Mode='login'|'register'|'forgot-password'|'reset-password';
 const modeCopy:Record<Mode,{title:string;description:string;button:string}>={
@@ -85,7 +86,7 @@ export function AuthForm({mode}:{mode:Mode}){
     {mode==='forgot-password'&&<>Remembered it? <Link href="/login">Back to sign in</Link></>}
     {mode==='reset-password'&&<Link href="/login">Go to sign in</Link>}
    </div>
-   <div className="cloud-footnote"><ShieldCheck size={16}/> Private data protected by Supabase authentication and PostgreSQL RLS.</div>
+   <div className="cloud-footnote"><ShieldCheck size={16}/> Private data protected by Supabase authentication and PostgreSQL RLS.</div><p className="auth-release" aria-label="Deployed release">Ship It {RELEASE_LABEL}</p>
   </section>
  </main>;
 }

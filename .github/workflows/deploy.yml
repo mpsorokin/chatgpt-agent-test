@@ -63,6 +63,9 @@ jobs:
         run: npm test
       - name: Build Next.js static export
         run: npm run build
+      - name: Write public release manifest
+        run: |
+          node -e "const fs=require('node:fs');fs.writeFileSync('out/release.json',JSON.stringify({version:require('./package.json').version,commit:process.env.GITHUB_SHA,builtAt:new Date().toISOString()},null,2))"
       - name: Install Playwright Chromium
         timeout-minutes: 4
         run: npx playwright install chromium
@@ -82,6 +85,8 @@ jobs:
         run: |
           test -f out/index.html
           test -d out/_next/static
+          test -f out/release.json
+          node -e "const r=require('./out/release.json');const p=require('./package.json');if(r.version!==p.version||r.commit!==process.env.GITHUB_SHA)process.exit(1)"
           for route in login register forgot-password reset-password resend-confirmation auth/callback dashboard board tasks calendar insights time-tracking planning sprints; do
             test -f "out/$route/index.html" || { echo "::error::Missing route $route"; exit 1; }
           done

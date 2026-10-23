@@ -26,3 +26,6 @@
 @media(max-width:480px){.auth-card{padding:27px 22px}}
 
 .auth-resend-hint{font-size:12px;color:#7b769a;margin:12px 0}.auth-resend-hint a,.auth-recovery-actions a{color:#7560e5;font-weight:800;text-decoration:none}.auth-recovery-actions{display:flex;gap:16px;flex-wrap:wrap;padding:14px 0;font-size:12px}.cloud-auth-card form button{display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* Non-interactive build label makes deployed versions observable. */
+.auth-release{margin:13px 0 0!important;text-align:center;font:600 11px/1.5 system-ui,sans-serif!important;color:#9594aa!important;}
