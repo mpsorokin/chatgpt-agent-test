@@ -1,4 +1,4 @@
-import { COLORS, priorityRank, uid, type Project, type Status, type Task, type TaskDraft, type Workspace } from './model';
+import { COLORS, priorityRank, uid, type Project, type Sprint, type Status, type Task, type TaskDraft, type Workspace } from './model';
 
 export type Action =
   | {type:'replace';state:Workspace}
@@ -8,7 +8,11 @@ export type Action =
   | {type:'delete';id:string}
   | {type:'clearDone'}
   | {type:'project';name:string}
-  | {type:'projectDelete';name:string};
+  | {type:'projectDelete';name:string}
+  | {type:'plan';id:string;startDate:string;due:string;estimateHours:number;sprintId:string}
+  | {type:'sprintAdd';name:string;goal:string;start:string;end:string}
+  | {type:'sprintUpdate';id:string;patch:Partial<Pick<Sprint,'name'|'goal'|'start'|'end'|'status'>>}
+  | {type:'sprintDelete';id:string};
 
 export function workspaceReducer(state:Workspace, action:Action):Workspace {
   switch(action.type){
@@ -30,6 +34,31 @@ export function workspaceReducer(state:Workspace, action:Action):Workspace {
       const p:Project={id:name,color:COLORS[state.projects.length%COLORS.length]};
       return {...state,projects:[...state.projects,p]};
     }
+    case 'plan': {
+      const t=state.tasks.find(task=>task.id===action.id);
+      if(!t || action.startDate&&action.due&&action.startDate>action.due)return state;
+      const dates=/^\d{4}-\d{2}-\d{2}$/;
+      if((action.startDate&&!dates.test(action.startDate))||(action.due&&!dates.test(action.due)))return state;
+      if(!Number.isFinite(action.estimateHours)||action.estimateHours<0||action.estimateHours>10000)return state;
+      const sprintId=(state.sprints??[]).some(s=>s.id===action.sprintId)?action.sprintId:'';
+      return {...state,tasks:state.tasks.map(task=>task.id===action.id?{...task,startDate:action.startDate,due:action.due,estimateHours:action.estimateHours,sprintId}:task)};
+    }
+    case 'sprintAdd': {
+      const name=action.name.trim().slice(0,90), sprints=state.sprints??[];
+      if(!name||!action.start||!action.end||action.start>action.end||sprints.length>=100)return state;
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(action.start)||!/^\d{4}-\d{2}-\d{2}$/.test(action.end))return state;
+      const sprint:Sprint={id:uid(),name,goal:action.goal.trim().slice(0,350),start:action.start,end:action.end,status:'planned'};
+      return {...state,sprints:[...sprints,sprint]};
+    }
+    case 'sprintUpdate': {
+      const sprint=state.sprints?.find(s=>s.id===action.id);if(!sprint)return state;
+      const patch={...action.patch};
+      if(patch.start&&patch.end&&patch.start>patch.end)return state;
+      const edited={...sprint,...patch};
+      if(!edited.name.trim()||edited.start>edited.end)return state;
+      return {...state,sprints:(state.sprints??[]).map(s=>s.id===action.id?edited:s)};
+    }
+    case 'sprintDelete': return {...state,sprints:(state.sprints??[]).filter(s=>s.id!==action.id),tasks:state.tasks.map(t=>t.sprintId===action.id?{...t,sprintId:''}:t)};
     case 'projectDelete': {
       if(['Work','Personal','Learning'].includes(action.name))return state;
       return {...state,projects:state.projects.filter(p=>p.id!==action.name),tasks:state.tasks.map(t=>t.project===action.name?{...t,project:'Work'}:t)};

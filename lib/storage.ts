@@ -1,4 +1,4 @@
-import { COLORS, DEFAULT_PROJECTS, LEGACY_KEYS, STORAGE_KEY, addDays, dateKey, uid, type Workspace, type Task, type Project } from './model';
+import { COLORS, DEFAULT_PROJECTS, LEGACY_KEYS, STORAGE_KEY, addDays, dateKey, uid, type Workspace, type Task, type Project, type Sprint } from './model';
 
 const safeString = (v: unknown, max: number) => typeof v === 'string' ? v.trim().slice(0,max) : '';
 const validDate = (v: unknown): v is string => {
@@ -27,6 +27,9 @@ export function normalizeTask(raw: unknown): Task | null {
     created,
     completedAt:typeof t.completedAt==='number' && Number.isFinite(t.completedAt) ? t.completedAt : null,
     subtasks,
+    startDate:validDate(t.startDate)?t.startDate:'',
+    estimateHours:typeof t.estimateHours==='number'&&Number.isFinite(t.estimateHours)&&t.estimateHours>=0&&t.estimateHours<=10000?t.estimateHours:0,
+    sprintId:safeString(t.sprintId,100),
   };
 }
 export function normalizeWorkspace(raw: unknown): Workspace | null {
@@ -44,11 +47,21 @@ export function normalizeWorkspace(raw: unknown): Workspace | null {
     projects.push({id,color});
   }
   for(const t of uniqueTasks.values()) if(!projects.some(p=>p.id===t.project)) projects.push({id:t.project,color:COLORS[projects.length%COLORS.length]});
-  return {tasks:[...uniqueTasks.values()],projects};
+  const sprints:Sprint[]=[];
+  if(Array.isArray(data?.sprints)) for(const rawSprint of data.sprints.slice(0,100)){
+    const sp=obj(rawSprint);if(!sp)continue;
+    const id=safeString(sp.id,100), name=safeString(sp.name,90);
+    const start=validDate(sp.start)?sp.start:'',end=validDate(sp.end)?sp.end:'';
+    if(!id||!name||!start||!end||start>end||sprints.some(x=>x.id===id))continue;
+    sprints.push({id,name,goal:safeString(sp.goal,350),start,end,status:['planned','active','completed'].includes(String(sp.status))?sp.status as Sprint['status']:'planned'});
+  }
+  const validIds=new Set(sprints.map(x=>x.id));
+  const migrated=[...uniqueTasks.values()].map(t=>({...t,sprintId:t.sprintId&&validIds.has(t.sprintId)?t.sprintId:''}));
+  return {tasks:migrated,projects,sprints};
 }
 export function seedWorkspace(): Workspace {
   const now=Date.now();
-  return {projects:DEFAULT_PROJECTS.map(p=>({...p})),tasks:[
+  return {projects:DEFAULT_PROJECTS.map(p=>({...p})),sprints:[],tasks:[
     {id:uid(),text:'Define the big picture for your next project',description:'A great project starts with a clear outcome. What does success look like?',project:'Work',priority:'high',status:'doing',due:dateKey(),created:now-30000,completedAt:null,subtasks:[{id:uid(),text:'Write down the goal',done:true},{id:uid(),text:'Break it into milestones',done:false}]},
     {id:uid(),text:'Try moving a card across your board',description:'Drag a task into any column to update its status.',project:'Learning',priority:'medium',status:'todo',due:dateKey(addDays(new Date(),1)),created:now-20000,completedAt:null,subtasks:[]},
     {id:uid(),text:'Take a well-earned break',description:'Small wins compound. Remember to recharge.',project:'Personal',priority:'low',status:'todo',due:'',created:now-10000,completedAt:null,subtasks:[]},

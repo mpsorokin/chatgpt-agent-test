@@ -1,10 +1,17 @@
-# Ship It 4.1 ✦
+# Ship It 5.0 ✦
 
-A fast, private productivity workspace built with **Next.js 16, React 19 and TypeScript**.
+A fast, private productivity workspace built with **Next.js 16, React 19.3.1 and TypeScript**.
 
 **Live:** https://mpsorokin.github.io/chatgpt-agent-test/
 
 ## Features
+
+- **React 19.3.1** (latest stable as of October 23, 2026)
+- **Gantt & planning:** start/due dates, estimates, task scheduling, multi-week timeline and sprint assignments
+- **Sprints:** iteration goals, start/close/reopen, backlog commitment, task completion metrics and ideal vs actual burndown
+- **Delivery analytics:** historical completion throughput, sprint velocity, lead time, overdue tasks, estimates vs logged time by project
+- **Backward-compatible storage:** tasks and time logs from previous releases are preserved through optional planning fields and sprint data
+
 
 - Dashboard with live activity, priority queue, project progress and a seven-day task chart
 - Kanban board with drag-and-drop and accessible status dropdowns
@@ -62,3 +69,7 @@ This is a fully static Next.js application: features that require a Node server 
 - The Pomodoro focus timer is separate and does not automatically count as tracked work. To log work, start the task timer.
 - CSV exports respect the current report date range. Complete JSON workspace backups include time-tracking state.
 - All information is local to this browser: no sync, server-side invoicing, background services, or account integration.
+
+## Release 5.0: Planning model
+
+The sprint and planning data is saved with tasks in the existing `ship-it:workspace:v4` browser storage key (schema is backward compatible). Existing tasks without schedules remain unscheduled and can be assigned through **Gantt & planning**. Sprint completion charts use currently retained task statuses and completion timestamps, rather than an event history. The Gantt is a scheduling visualization, not an automatic critical-path or dependency solver.

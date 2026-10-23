@@ -1,6 +1,6 @@
 export type Status = 'todo' | 'doing' | 'done';
 export type Priority = 'high' | 'medium' | 'low';
-export type View = 'dashboard' | 'board' | 'list' | 'calendar' | 'insights' | 'time';
+export type View = 'dashboard' | 'board' | 'list' | 'calendar' | 'insights' | 'time' | 'planning' | 'sprints';
 export interface Subtask { id: string; text: string; done: boolean }
 export interface Task {
   id: string;
@@ -13,9 +13,13 @@ export interface Task {
   created: number;
   completedAt: number | null;
   subtasks: Subtask[];
+  startDate?: string;
+  estimateHours?: number;
+  sprintId?: string;
 }
 export interface Project { id: string; color: string }
-export interface Workspace { tasks: Task[]; projects: Project[] }
+export interface Sprint { id:string; name:string; goal:string; start:string; end:string; status:'planned'|'active'|'completed' }
+export interface Workspace { tasks: Task[]; projects: Project[]; sprints?: Sprint[] }
 export type TaskDraft = Pick<Task, 'text' | 'description' | 'project' | 'priority' | 'status' | 'due' | 'subtasks'>;
 export const COLORS = ['#816df2','#30bca3','#f1ab59','#e677a3','#5b9edb','#a3a7b4','#c18bf5'];
 export const DEFAULT_PROJECTS: Project[] = [{id:'Work',color:'#816df2'},{id:'Personal',color:'#30bca3'},{id:'Learning',color:'#f1ab59'}];

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './time-tracking.css';
+import './planning.css';
 
 export const metadata: Metadata = {
   title: 'Ship It — Make progress feel good',

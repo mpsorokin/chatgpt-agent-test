@@ -1,0 +1,21 @@
+'use client';
+import { BarChart3, Clock3, Target, TrendingUp } from 'lucide-react';
+import { type Project, type Sprint, type Task } from '@/lib/model';
+import { deliveryMetrics, estimateHours, sprintVelocity, weeklyThroughput } from '@/lib/planning';
+import { loggedMs, type TimeEntry } from '@/lib/time-tracking';
+export function DeliveryAnalytics({tasks,sprints,entries,projects}:{tasks:Task[];sprints:Sprint[];entries:TimeEntry[];projects:Project[]}){
+ const data=deliveryMetrics(tasks),weeks=weeklyThroughput(tasks),velocity=sprintVelocity(sprints,tasks);
+ const maxWeek=Math.max(1,...weeks.map(w=>w.done)),maxVelocity=Math.max(1,...velocity.map(v=>v.planned),...velocity.map(v=>v.completed));
+ const projectData=projects.map(p=>{
+  const own=tasks.filter(t=>t.project===p.id);
+  return {id:p.id,color:p.color,estimated:estimateHours(own),tracked:loggedMs(entries.filter(e=>e.project===p.id))/3600000,done:own.filter(t=>t.status==='done').length,total:own.length};
+ }).filter(p=>p.total||p.tracked).sort((a,b)=>b.estimated-a.estimated);
+ const maxProject=Math.max(1,...projectData.map(p=>p.estimated),...projectData.map(p=>p.tracked));
+ return <section className="pl-page pl-analytics"><div className="pl-section-title"><span className="pl-kicker"><TrendingUp size={14}/> DELIVERY ANALYTICS</span><h2>From activity to outcomes.</h2><p>Real data from tasks, completion dates, sprints and recorded time — not generated estimates.</p></div>
+ <div className="pl-stats pl-stats-four"><article><small>Average lead time</small><strong>{data.avgLeadDays.toFixed(1)}d</strong><span>Creation to completion</span></article><article><small>Overdue tasks</small><strong>{data.overdue}</strong><span>Open tasks past due</span></article><article><small>Estimated work</small><strong>{data.estimated.toFixed(1)}h</strong><span>Current task estimates</span></article><article><small>Tracked work</small><strong>{(loggedMs(entries)/3600000).toFixed(1)}h</strong><span>Saved time sessions</span></article></div>
+ <div className="pl-analytics-grid"><article className="surface pl-panel"><header className="pl-panel-head"><div><h3>Weekly throughput</h3><p>Completed tasks in the last eight seven-day windows</p></div><span className="pl-chip">8 weeks</span></header><div className="pl-week-columns">{weeks.map((week,i)=><div key={week.start} title={week.start+' to '+week.end+' · '+week.done+' tasks'}><strong>{week.done}</strong><div><span style={{height:Math.max(3,week.done/maxWeek*100)+'%'}}/></div><small>W{i+1}</small></div>)}</div></article>
+ <article className="surface pl-panel"><header className="pl-panel-head"><div><h3>Sprint velocity</h3><p>Estimated hours planned vs completed</p></div></header>{velocity.length?<div className="pl-velocity-list">{velocity.slice(-8).map(s=><div key={s.id}><div><strong>{s.name}</strong><small>{s.completed.toFixed(1)} / {s.planned.toFixed(1)}h</small></div><section><span style={{width:s.planned/maxVelocity*100+'%'}}/><i style={{width:s.completed/maxVelocity*100+'%'}}/></section></div>)}</div>:<p className="pl-empty">Create sprints and assign tasks to see velocity.</p>}</article></div>
+ <article className="surface pl-panel"><header className="pl-panel-head"><div><h3>Estimate vs actual by project</h3><p>Compare task estimates with time logged against each project.</p></div><div className="pl-legend"><span><i className="pl-ideal"/> Planned</span><span><i className="pl-actual"/> Tracked</span></div></header>{projectData.length?<div className="pl-project-workload">{projectData.map(p=><div key={p.id}><div><strong><i style={{background:p.color}}/>{p.id}</strong><small>{p.done}/{p.total} tasks completed</small></div><section><span style={{width:p.estimated/maxProject*100+'%'}}/><i style={{width:p.tracked/maxProject*100+'%'}}/></section><small>{p.estimated.toFixed(1)}h estimated · {p.tracked.toFixed(1)}h logged</small></div>)}</div>:<p className="pl-empty">Plan tasks and track time to see project comparisons.</p>}</article>
+ <p className="pl-note"><Clock3 size={14}/> Historical metrics reflect currently retained task data. Reopened or deleted tasks and missing completion timestamps can affect velocity and lead-time accuracy. Logged time remains associated with the project recorded when each session ended.</p>
+ </section>;
+}
