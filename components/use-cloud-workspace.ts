@@ -8,8 +8,9 @@ import { emptyTimeState, normalizeTimeState } from '@/lib/time-tracking';
 import { DEFAULT_PROJECTS } from '@/lib/model';
 import { supabase } from '@/lib/supabase';
 import { serializeCloudState,hasUnsavedCloudChanges,cloudRetryDelay } from '@/lib/cloud-sync';
+import { recoveryKey, makeRecoveryDraft, parseRecoveryDraft, sameRecoveryContent, type RecoveryDraft } from '@/lib/recovery';
 
-type Stage='loading'|'signedout'|'setup'|'ready'|'error';
+type Stage='loading'|'signedout'|'setup'|'ready'|'error'|'recovery';
 type CloudRow={workspace:unknown;time_tracking:unknown;revision:number};
 const delay=850;
 
@@ -27,6 +28,8 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
  const dirtyRef=useRef(false);
  const [saveTick,setSaveTick]=useState(0);
  const consecutiveFailures=useRef(0);
+ const [recovery,setRecovery]=useState<RecoveryDraft|null>(null);
+ const [recoveryConflict,setRecoveryConflict]=useState(false);
  const load=useCallback(async(user:User)=>{
   if(loadingUser.current===user.id)return;
   const generation=++requestId.current;
@@ -40,7 +43,21 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
    const normalized=normalizeWorkspace(row.workspace),time=normalizeTimeState(row.time_tracking);
    if(!normalized||!time)throw Error('Cloud data is invalid. Nothing was overwritten.');
    consecutiveFailures.current=0;revision.current=Number(row.revision);baseline.current=serializeCloudState(normalized,time);dirtyRef.current=false;
-   setWorkspace(normalized);setTime(time);setStage('ready');setStatus('Synced with Supabase');setDirty(false);
+   setWorkspace(normalized);setTime(time);setDirty(false);
+   let draft:RecoveryDraft|null=null;
+   try{draft=parseRecoveryDraft(window.sessionStorage.getItem(recoveryKey(user.id)),user.id);}catch{}
+   if(draft&&sameRecoveryContent(draft,normalized,time)){
+    try{window.sessionStorage.removeItem(recoveryKey(user.id));}catch{}
+    draft=null;
+   }
+   if(draft){
+    setRecovery(draft);
+    setRecoveryConflict(draft.revision!==Number(row.revision));
+    setStage('recovery');setStatus('Recover unsaved browser changes');
+   }else{
+    setRecovery(null);setRecoveryConflict(false);
+    setStage('ready');setStatus('Synced with Supabase');
+   }
   }catch(e){if(accountRef.current===user.id&&requestId.current===generation){setError(e instanceof Error?e.message:'Cloud load failed');setStage('error');setStatus('Sync unavailable');}}
   finally{if(requestId.current===generation){loadingRef.current=false;loadingUser.current=null;}}
  },[setWorkspace,setTime]);
@@ -52,7 +69,7 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
    if(!u){
     const previousUser=accountRef.current;
     requestId.current++;loadingUser.current=null;loadingRef.current=false;accountRef.current='';
-    baseline.current='';revision.current=0;dirtyRef.current=false;consecutiveFailures.current=0;
+    baseline.current='';revision.current=0;dirtyRef.current=false;consecutiveFailures.current=0;setRecovery(null);setRecoveryConflict(false);
     // First visit: preserve genuine legacy browser data for explicit migration.
     // After an authenticated sign-out: wipe the previous account from memory.
     if(previousUser){
@@ -95,8 +112,19 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
  useEffect(()=>{
   if(stage!=='ready'||!user||!localReady||!timeReady)return;
   const snapshot=serializeCloudState(localWorkspace,localTime);
-  if(snapshot===baseline.current){dirtyRef.current=false;setDirty(false);return;}
+  if(snapshot===baseline.current){
+   dirtyRef.current=false;setDirty(false);
+   // Clean up persisted draft only when the server and current UI agree.
+   try{window.sessionStorage.removeItem(recoveryKey(user.id));}catch{}
+   return;
+  }
   dirtyRef.current=true;setDirty(true);setStatus('Unsaved changes...');
+  try{
+   const key=recoveryKey(user.id);
+   window.sessionStorage.setItem(key,JSON.stringify(makeRecoveryDraft(user.id,revision.current,localWorkspace,localTime)));
+  }catch{
+   setError('The browser cannot store a recovery draft. Export a JSON backup before leaving.');
+  }
   const id=window.setTimeout(async()=>{
    if(accountRef.current!==user.id||saving.current)return;
    saving.current=true;
@@ -126,6 +154,9 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
     baseline.current=submitted;
     const upToDate=!hasUnsavedCloudChanges(workspaceRef.current,timeRef.current,submitted);
     dirtyRef.current=!upToDate;setDirty(!upToDate);setError('');setStatus(upToDate?'Synced with Supabase':'More changes to save...');
+    if(upToDate){
+     try{window.sessionStorage.removeItem(recoveryKey(user.id));}catch{}
+    }
    }catch(err){
     consecutiveFailures.current++;
     setError(err instanceof Error?err.message:'Cloud save failed');
@@ -149,6 +180,24 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
   window.addEventListener('beforeunload',handler);
   return()=>window.removeEventListener('beforeunload',handler);
  },[stage]);
+ const recoverChanges=useCallback(()=>{
+  if(!user||!recovery||recoveryConflict)return;
+  setWorkspace(recovery.workspace);setTime(recovery.time);
+  setRecovery(null);setStage('ready');setStatus('Restoring browser changes...');
+ },[user,recovery,recoveryConflict,setWorkspace,setTime]);
+ const discardRecovery=useCallback(()=>{
+  if(!user)return;
+  try{window.sessionStorage.removeItem(recoveryKey(user.id));}catch{}
+  setRecovery(null);setRecoveryConflict(false);setStage('ready');setStatus('Synced with Supabase');
+ },[user]);
+ const downloadRecovery=useCallback(()=>{
+  if(!recovery)return;
+  const payload={version:7,exportedAt:new Date().toISOString(),...recovery.workspace,timeTracking:recovery.time};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download='shipit-unsynced-recovery.json';link.click();
+  window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+ },[recovery]);
  const signOut=useCallback(async()=>{
   // During first-time setup there is no cloud baseline: allow cancelling signup.
   const changed=stage!=='setup'&&hasUnsavedCloudChanges(workspaceRef.current,timeRef.current,baseline.current);
@@ -157,5 +206,5 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
   }
   const {error}=await supabase.auth.signOut();if(error)setError(error.message);
  },[stage]);
- return {user,stage,status,error,init,signOut,load,dirty};
+ return {user,stage,status,error,init,signOut,load,dirty,recovery,recoveryConflict,recoverChanges,discardRecovery,downloadRecovery};
 }

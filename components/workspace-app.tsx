@@ -121,6 +121,18 @@ export default function WorkspaceApp({children}:{children:ReactNode}){
  if(cloud.stage==='loading')return <div className="cloud-gate"><div className="cloud-auth-card"><h1>Opening your workspace...</h1><p>Checking your session and loading your private data.</p></div></div>;
  if(cloud.stage==='signedout')return <div className="cloud-gate"><div className="cloud-auth-card"><h1>Sign in required</h1><p>Redirecting to the sign-in page…</p></div></div>;
  if(cloud.stage==='setup')return <div className="cloud-setup"><section className="cloud-setup-card"><h1>Welcome to Ship It Cloud ☁️</h1><p>You're signed in as <strong>{cloud.user?.email}</strong>. Your database workspace is empty.</p><p>Choose whether to securely import the tasks, projects, sprints and time records already saved in this browser, or begin with an empty workspace. Existing local data will never be deleted.</p><div className="cloud-setup-actions"><button onClick={()=>void cloud.init(true)} disabled={!ready||!tracking.ready}>Import my browser data to Supabase</button><button onClick={()=>void cloud.init(false)} disabled={!ready||!tracking.ready}>Start with an empty cloud workspace</button><button onClick={()=>void cloud.signOut()}>Sign out</button></div>{cloud.error&&<p role="alert">{cloud.error}</p>}</section></div>;
+ if(cloud.stage==='recovery')return <div className="cloud-setup"><section className="cloud-setup-card">
+  <h1>Recover unsaved changes</h1>
+  <p>A local recovery draft was found for your signed-in account. It contains edits not present in the last confirmed cloud save.</p>
+  {cloud.recoveryConflict
+   ?<p role="alert">The cloud workspace has changed since this draft was recorded. Automatic recovery is blocked to protect newer cloud edits. Download the draft, discard it here, then import individual changes after reviewing.</p>
+   :<p>Restoring will apply the draft to this workspace and save it to Supabase. Your remote revision has not changed.</p>}
+  <div className="cloud-setup-actions">
+   {!cloud.recoveryConflict&&<button onClick={cloud.recoverChanges}>Restore browser changes</button>}
+   <button onClick={cloud.downloadRecovery}>Download recovery JSON</button>
+   <button onClick={cloud.discardRecovery}>Keep cloud version / discard draft</button>
+  </div>
+  </section></div>;
  if(cloud.stage==='error')return <div className="cloud-setup"><section className="cloud-setup-card"><h1>Cloud sync needs attention</h1><p role="alert">{cloud.error||cloud.status}</p><p>Your browser backup is still available. Export your current data before refreshing if you made changes.</p><div className="cloud-setup-actions"><button onClick={exportTasks}>Download a JSON backup</button><button onClick={()=>cloud.user&&void cloud.load(cloud.user)}>Reload from Supabase (replaces local state)</button><button onClick={()=>void cloud.signOut()}>Sign out</button></div></section></div>;
  return <WorkspaceContext.Provider value={contextValue}><div className="workspace-root">
  <aside className={'sidebar '+(sidebarOpen?'mobile-open':'')} aria-label="Main navigation"><div className="sidebar-header"><Link className="brand" href="/dashboard" onClick={()=>{setProject(null);setSidebarOpen(false)}} aria-label="Ship It dashboard"><span className="brand-mark"><Sparkles size={20} strokeWidth={2.5}/></span><span>ship<span className="brand-accent">it</span><span className="brand-period">.</span></span></Link><span className="brand-version">7.1</span><button aria-label="Close menu" className="sidebar-close" onClick={()=>setSidebarOpen(false)}><X size={19}/></button></div>

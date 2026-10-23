@@ -1,26 +1,29 @@
 {
   "name": "ship-it-next",
-  "version": "7.1.0",
+  "version": "7.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "audit:deps": "npm audit --omit=dev --audit-level=high"
   },
   "dependencies": {
     "next": "16.4.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "lucide-react": "^0.468.0",
+    "lucide-react": "0.468.0",
     "@supabase/supabase-js": "2.118.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.0",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.2.0",
-    "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "@types/node": "22.15.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.2.0",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4",
+    "@playwright/test": "1.64.1"
   }
 }
