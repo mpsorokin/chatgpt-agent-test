@@ -9,6 +9,8 @@
 @media(max-width:410px){.hero{flex-direction:column;align-items:flex-start;gap:12px}.hero-progress{display:none}.page-head .subtitle{max-width:220px}.page-head .primary{padding:10px}.metric{min-height:115px}.field-grid{grid-template-columns:1fr;gap:0}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 @media(max-width:680px){.topbar .breadcrumb{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;gap:6px}.top-actions{gap:5px;flex:none}.top-button{width:32px;height:32px}.avatar{width:32px;height:32px;flex:none}.sidebar{overflow:hidden}.nav-section{flex:none}}
+
+#task-delete{margin-right:auto;color:var(--red)}
 </style></head>
 <body>
 <div class="app">
@@ -33,7 +35,7 @@
     <footer class="footer"><span>✦ Built with ChatGPT · No accounts, no tracking, all yours.</span><a href="https://github.com/mpsorokin/chatgpt-agent-test" target="_blank" rel="noopener noreferrer">Source on GitHub ↗</a></footer>
   </main>
 </div>
-<dialog id="task-dialog" aria-labelledby="task-dialog-title"><div class="modal-head"><h2 id="task-dialog-title">Create a task</h2><button class="modal-close" id="task-dialog-close" aria-label="Close dialog">×</button></div><form id="task-form" class="modal-body"><div class="field"><label for="task-name">TASK TITLE *</label><input id="task-name" required maxlength="180" placeholder="What are you working on?" autocomplete="off"></div><div class="field"><label for="task-description">DESCRIPTION</label><textarea id="task-description" maxlength="1500" placeholder="The details that matter..."></textarea></div><div class="field-grid"><div class="field"><label for="task-project">PROJECT</label><select id="task-project"></select></div><div class="field"><label for="task-status">STATUS</label><select id="task-status"><option value="todo">To do</option><option value="doing">In progress</option><option value="done">Done</option></select></div></div><div class="field-grid"><div class="field"><label for="task-priority">PRIORITY</label><select id="task-priority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div><div class="field"><label for="task-due">DUE DATE</label><input id="task-due" type="date"></div></div><div class="field"><label for="subtask-input">CHECKLIST</label><div class="subtask-add"><input id="subtask-input" maxlength="120" placeholder="Add a step..." autocomplete="off"><button type="button" id="subtask-add" class="small-add">Add</button></div><ul id="subtask-list" class="subtask-list"></ul></div><div class="modal-actions"><button type="button" class="secondary" id="task-cancel">Cancel</button><button type="submit" class="primary" id="task-save">Create task</button></div></form></dialog>
+<dialog id="task-dialog" aria-labelledby="task-dialog-title"><div class="modal-head"><h2 id="task-dialog-title">Create a task</h2><button class="modal-close" id="task-dialog-close" aria-label="Close dialog">×</button></div><form id="task-form" class="modal-body"><div class="field"><label for="task-name">TASK TITLE *</label><input id="task-name" required maxlength="180" placeholder="What are you working on?" autocomplete="off"></div><div class="field"><label for="task-description">DESCRIPTION</label><textarea id="task-description" maxlength="1500" placeholder="The details that matter..."></textarea></div><div class="field-grid"><div class="field"><label for="task-project">PROJECT</label><select id="task-project"></select></div><div class="field"><label for="task-status">STATUS</label><select id="task-status"><option value="todo">To do</option><option value="doing">In progress</option><option value="done">Done</option></select></div></div><div class="field-grid"><div class="field"><label for="task-priority">PRIORITY</label><select id="task-priority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div><div class="field"><label for="task-due">DUE DATE</label><input id="task-due" type="date"></div></div><div class="field"><label for="subtask-input">CHECKLIST</label><div class="subtask-add"><input id="subtask-input" maxlength="120" placeholder="Add a step..." autocomplete="off"><button type="button" id="subtask-add" class="small-add">Add</button></div><ul id="subtask-list" class="subtask-list"></ul></div><div class="modal-actions"><button type="button" class="secondary" id="task-delete" hidden>Delete task</button><button type="button" class="secondary" id="task-cancel">Cancel</button><button type="submit" class="primary" id="task-save">Create task</button></div></form></dialog>
 <dialog id="project-dialog" aria-labelledby="project-dialog-title"><div class="modal-head"><h2 id="project-dialog-title">New project</h2><button class="modal-close" id="project-dialog-close" aria-label="Close dialog">×</button></div><form id="project-form" class="modal-body"><div class="field"><label for="project-name">PROJECT NAME *</label><input id="project-name" placeholder="e.g. Side project" maxlength="35" required></div><div class="modal-actions"><button type="button" class="secondary" id="project-cancel">Cancel</button><button type="submit" class="primary">Add project</button></div></form></dialog>
 <dialog id="command-dialog" aria-label="Quick actions"><input id="command-search" class="cmd-input" placeholder="Search a command..." aria-label="Search commands"><div id="command-results" class="cmd-list"></div></dialog>
 <input type="file" id="import-file" accept="application/json,.json" hidden>
@@ -224,7 +226,7 @@
   function openTask(t=null,status='todo'){
     state.editing=t?t.id:null;
     state.editingSubtasks=t?t.subtasks.map(s=>({...s})):[];
-    $('#task-dialog-title').textContent=t?'Edit task':'Create a task';$('#task-save').textContent=t?'Save changes':'Create task';
+    $('#task-dialog-title').textContent=t?'Edit task':'Create a task';$('#task-save').textContent=t?'Save changes':'Create task';$('#task-delete').hidden=!t;
     $('#task-name').value=t?.text||'';$('#task-description').value=t?.description||'';$('#task-due').value=t?.due||'';
     const project=$('#task-project');project.replaceChildren();for(const p of state.projects){const option=make('option','',p.id);option.value=p.id;project.append(option);}
     project.value=t?.project||state.project||'Work';$('#task-status').value=t?.status||status;$('#task-priority').value=t?.priority||'medium';$('#subtask-input').value='';renderEditSubtasks();$('#task-dialog').showModal();$('#task-name').focus();
@@ -275,6 +277,12 @@
   $$('.nav-link[data-view]').forEach(b=>b.addEventListener('click',()=>changeView(b.dataset.view)));
   $('#project-create').addEventListener('click',openProject);
   $('#task-dialog-close').addEventListener('click',closeTask);$('#task-cancel').addEventListener('click',closeTask);$('#task-form').addEventListener('submit',saveTask);
+  $('#task-delete').addEventListener('click',()=>{
+    const t=getTask(state.editing);if(!t||!window.confirm('Delete this task?'))return;
+    const index=state.tasks.findIndex(x=>x.id===t.id);if(index<0)return;
+    state.tasks.splice(index,1);closeTask();save();render();
+    toast('Task deleted','Undo',()=>{if(!getTask(t.id)){state.tasks.splice(Math.min(index,state.tasks.length),0,t);save();render();}});
+  });
   $('#subtask-add').addEventListener('click',addSubtask);$('#subtask-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addSubtask();}});
   $('#task-dialog').addEventListener('click',e=>{if(e.target===$('#task-dialog'))closeTask();});
   $('#project-dialog-close').addEventListener('click',()=>$('#project-dialog').close());$('#project-cancel').addEventListener('click',()=>$('#project-dialog').close());$('#project-form').addEventListener('submit',addProject);
