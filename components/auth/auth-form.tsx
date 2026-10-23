@@ -47,7 +47,7 @@ export function AuthForm({mode}:{mode:Mode}){
     const {data,error}=await supabase.auth.signUp({email:email.trim(),password,options:{emailRedirectTo:absoluteAuthUrl('/auth/callback',window.location.origin)}});
     if(error)throw error;
     if(data.session)router.replace('/dashboard');
-    else setMessage('Check your inbox for a confirmation email. You can sign in after verifying your address.');
+    else setMessage('Request processed. If this is a new unverified account, check your inbox for a confirmation link. Already signed up or confirmed? Sign in with your existing password — Supabase may not send another email.');
    }else if(mode==='forgot-password'){
     const {error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:absoluteAuthUrl('/reset-password',window.location.origin)});
     if(error)throw error;
@@ -76,7 +76,7 @@ export function AuthForm({mode}:{mode:Mode}){
    </form>
    {error&&<p className="auth-feedback auth-error" role="alert">{error}</p>}
    {message&&<p className="auth-feedback auth-success" role="status">{message}</p>}
-   {mode==='register'&&<p className="auth-resend-hint">Didn't receive the message, or did your link expire? <Link href="/resend-confirmation">Resend confirmation email</Link></p>}
+   {mode==='register'&&<p className="auth-resend-hint">Already verified or registering again? <Link href="/login">Sign in instead</Link>. Still waiting for verification? <Link href="/resend-confirmation">Request a new confirmation link</Link>.</p>}
    {mode==='login'&&error.toLowerCase().includes('email not confirmed')&&<p className="auth-resend-hint">Email not confirmed yet? <Link href="/resend-confirmation">Get a new confirmation link</Link></p>}
    {mode==='reset-password'&&error&&<p className="auth-resend-hint"><Link href="/forgot-password">Request a fresh password reset link</Link></p>}
    <div className="auth-switch">

@@ -109,3 +109,11 @@ https://mpsorokin.github.io/chatgpt-agent-test/reset-password/
 If custom email templates use `{{ .SiteURL }}` for their direct app links, update them to use `{{ .RedirectTo }}` (or the default `{{ .ConfirmationURL }}` for Supabase-generated verification URLs).
 
 Old single-use expired URLs cannot be repaired. Visit `/resend-confirmation/`, enter the original email address, then click the newest link only once. `/auth/callback/` now displays clear auth-token errors and a resend action instead of an indefinite loading state. Email-scanner link prefetching can also consume verification URLs: use OTP-based templates or a click-to-confirm landing page when necessary.
+
+## Why signup and resend sometimes send no email (2026-10-23 incident)
+
+Auth logs and the `auth.users` table confirmed the existing registered account was **successfully email-confirmed**, with a `mail.send` event and a successful verification. Reusing the same one-time link later returned `otp_expired`. Subsequent `/resend` requests returned HTTP 200 without new `mail.send` events, and a new registration was logged as `user_repeated_signup`.
+
+**Confirmed accounts should sign in, not register or request a signup confirmation again.** The UI now reports signup and resend requests accurately rather than promising an email will arrive.
+
+For additional users, Supabase's built-in SMTP is *not a production email service*: it only sends to authorized project team addresses and currently has a low two-email-per-hour project limit. Configure custom SMTP under Supabase Dashboard → Authentication → SMTP Settings and monitor Auth Logs to diagnose delivery failures. This setting cannot be changed via the currently connected Supabase database tools; do not attempt to disable email confirmation as a production workaround.
