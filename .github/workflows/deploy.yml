@@ -1,24 +1,27 @@
-name: Test, build and deploy Next.js
+name: Ship It - Next.js CI and Pages
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
-  group: github-pages
-  cancel-in-progress: true
+  group: ship-it-pages
+  cancel-in-progress: false
+
 jobs:
-  deploy:
+  build:
+    name: Typecheck, test and build Next.js
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install dependencies
@@ -27,13 +30,36 @@ jobs:
         run: npm run typecheck
       - name: Unit tests
         run: npm test
-      - name: Build static Next.js site
+      - name: Build Next.js static export
         run: npm run build
+      - name: Verify static export (not legacy v3)
+        shell: bash
+        run: |
+          test -f out/index.html
+          test -d out/_next/static
+          grep -q '/_next/static/' out/index.html
+          if grep -Eiq 'SHIP IT / 3[.]0|Ship It 3[.]0' out/index.html; then
+            echo "::error::Legacy Ship It v3 was exported instead of Next.js"
+            exit 1
+          fi
+          echo "Next.js static assets and HTML verified."
       - name: Disable Jekyll processing
         run: touch out/.nojekyll
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload static site artifact
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./out
-      - id: deployment
+
+  deploy:
+    name: Deploy Next.js to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy static site
+        id: deployment
         uses: actions/deploy-pages@v4
