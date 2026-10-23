@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { type FormEvent, useMemo, useState } from 'react';
 import { BarChart3, CalendarClock, CircleStop, Clock3, Download, Pause, Play, Plus, Timer, Trash2, TrendingUp } from 'lucide-react';
 import { addDays, dateKey, type Project, type Task } from '@/lib/model';
 import { betweenDates, clock, csvEntries, humanDuration, loggedMs, type ActiveTimer, type TimeEntry, type TimerTarget } from '@/lib/time-tracking';
@@ -64,7 +64,7 @@ export function TimeTrackingPanel({tasks,projects,entries,active,now,onStart,onS
  const maxDay=Math.max(...weekTotals,60000);
  const runningElapsed=active?Math.max(0,now-active.startedAt):0;
  const start=()=>{onStart(target);notify('Timer started');};
- const createManual=(e:React.FormEvent)=>{
+ const createManual=(e:FormEvent)=>{
   e.preventDefault();
   const mins=Number(hours)*60+Number(minutes);
   if(!Number.isFinite(mins)||mins<=0||mins>1440||new Date(manualDay+'T12:00:00').getTime()>Date.now()+86400000){
