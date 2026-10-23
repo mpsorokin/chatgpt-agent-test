@@ -2,6 +2,8 @@ name: Ship It - Next.js CI and Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -10,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: ship-it-pages
+  group: ship-it-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -73,6 +75,7 @@ jobs:
 
   deploy:
     name: Deploy Next.js to GitHub Pages
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     environment:

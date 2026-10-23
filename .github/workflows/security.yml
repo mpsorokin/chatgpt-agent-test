@@ -1,0 +1,29 @@
+name: Dependency and frontend secret audit
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Production dependency vulnerability check
+        run: npm audit --omit=dev --audit-level=high
+      - name: Reject browser service-role or secret keys
+        shell: bash
+        run: |
+          if grep -Ern 'sb_secret_[A-Za-z0-9]|SUPABASE_SERVICE_ROLE_KEY[[:space:]]*[:=]' app components lib 2>/dev/null; then
+            echo '::error::Secret key found in browser code'
+            exit 1
+          fi

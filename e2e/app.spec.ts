@@ -5,7 +5,7 @@ const accountId='11111111-1111-4111-8111-111111111111';
 const now=new Date().toISOString();
 const user={id:accountId,email:'e2e@example.test',aud:'authenticated',role:'authenticated',created_at:now,updated_at:now,app_metadata:{provider:'email',providers:['email']},user_metadata:{},identities:[]};
 
-async function mockAuth(page:Page){
+async function mockAuth(page:Page,options:{failSaves?:boolean}={}){
  let revision=1;
  let ws:any={tasks:[],projects:[{id:'Work',color:'#816df2'},{id:'Personal',color:'#30bca3'},{id:'Learning',color:'#f1ab59'}],sprints:[]};
  let tm:any={entries:[],active:null};
@@ -20,6 +20,11 @@ async function mockAuth(page:Page){
  }));
  await page.route('**/rest/v1/rpc/shipit_save_v8',async route=>{
   const body=route.request().postDataJSON();
+  if(options.failSaves){
+   saves.push(body);
+   await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'PGRST001',message:'Simulated transient database outage'})});
+   return;
+  }
   if(body.p_expected_revision!==revision){
    await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({code:'40001',message:'revision conflict'})});
    return;
@@ -66,4 +71,24 @@ test('mocked Supabase login, task creation, Gantt route and atomic save',async({
  await page.goto(root+'/planning/');
  await expect(page.getByRole('heading',{name:'Make the roadmap visible.'})).toBeVisible();
  await expect(page.getByText('Release validation').first()).toBeVisible();
+});
+
+test('failed cloud save can be recovered after a browser reload',async({page})=>{
+ const backend=await mockAuth(page,{failSaves:true});
+ await page.goto(root+'/login/');
+ await page.getByLabel('Email address').fill('e2e@example.test');
+ await page.getByLabel('Password',{exact:true}).fill('somepassword');
+ await page.getByRole('button',{name:'Sign in'}).click();
+ await expect(page).toHaveURL(/\/dashboard\/?$/);
+ await expect(page.getByText('Synced with Supabase')).toBeVisible();
+ await page.getByRole('button',{name:/New task/i}).first().click();
+ await page.getByLabel('Task name').fill('Recovered after outage');
+ await page.getByRole('button',{name:'Create task',exact:true}).click();
+ await expect.poll(()=>backend.saves.length,{timeout:15000}).toBeGreaterThan(0);
+ page.on('dialog',dialog=>void dialog.accept());
+ await page.reload();
+ await expect(page.getByRole('heading',{name:'Recover unsaved changes'})).toBeVisible();
+ await page.getByRole('button',{name:'Restore browser changes'}).click();
+ await expect(page.getByText('Recovered after outage').first()).toBeVisible();
+ expect(backend.getWorkspace().tasks).toHaveLength(0);
 });
