@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {makeRecoveryDraft,parseRecoveryDraft,recoveryKey,sameRecoveryContent} from '../lib/recovery';
 import type { Workspace } from '../lib/model';
 import type { TimeState } from '../lib/time-tracking';
-const workspace:Workspace={projects:[{id:'Work',color:'#816df2'}],tasks:[],sprints:[]};
+const workspace:Workspace={projects:[{id:'Work',color:'#816df2'},{id:'Personal',color:'#30bca3'},{id:'Learning',color:'#f1ab59'}],tasks:[],sprints:[]};
 const time:TimeState={entries:[],active:null};
 describe('user-scoped unsynced recovery',()=>{
  it('never restores a draft from a different account',()=>{

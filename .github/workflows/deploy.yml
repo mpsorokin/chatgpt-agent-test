@@ -18,7 +18,7 @@ jobs:
     name: Typecheck, test and build Next.js
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # bootstrap package-lock.json once; remove after it is committed
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,17 +26,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Bootstrap missing lockfile (one time only)
-        shell: bash
-        run: |
-          if [ ! -f package-lock.json ]; then
-            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "build: commit reproducible npm dependency lockfile"
-            git push origin HEAD:main
-          fi
+          cache: npm
       - name: Install exact dependencies
         run: npm ci --no-audit --no-fund
       - name: Typecheck
