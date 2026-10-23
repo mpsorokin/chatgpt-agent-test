@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { absoluteAuthUrl } from '@/lib/routes';
+import { readAuthLinkError } from '@/lib/auth-errors';
 
 type Mode='login'|'register'|'forgot-password'|'reset-password';
 const modeCopy:Record<Mode,{title:string;description:string;button:string}>={
@@ -24,8 +25,10 @@ export function AuthForm({mode}:{mode:Mode}){
   if(mode==='login'||mode==='register'||mode==='forgot-password'){
    void supabase.auth.getUser().then(({data})=>{if(mounted&&data.user)router.replace('/dashboard');});
   } else {
-   // The recovery email creates a short-lived Supabase session in this client.
-   void supabase.auth.getUser().then(({data})=>{if(mounted){setAuthorized(Boolean(data.user));if(!data.user)setError('Open the password recovery link from your email first.');}});
+   // Supabase redirects invalid recovery links with an error fragment.
+   const linkError=readAuthLinkError(window.location.hash);
+   if(linkError){setAuthorized(false);setError(linkError.message);return;}
+   void supabase.auth.getUser().then(({data})=>{if(mounted){setAuthorized(Boolean(data.user));if(!data.user)setError('Open a valid password recovery link from your email first.');}});
   }
   return ()=>{mounted=false;};
  },[mode,router]);
@@ -73,6 +76,9 @@ export function AuthForm({mode}:{mode:Mode}){
    </form>
    {error&&<p className="auth-feedback auth-error" role="alert">{error}</p>}
    {message&&<p className="auth-feedback auth-success" role="status">{message}</p>}
+   {mode==='register'&&<p className="auth-resend-hint">Didn't receive the message, or did your link expire? <Link href="/resend-confirmation">Resend confirmation email</Link></p>}
+   {mode==='login'&&error.toLowerCase().includes('email not confirmed')&&<p className="auth-resend-hint">Email not confirmed yet? <Link href="/resend-confirmation">Get a new confirmation link</Link></p>}
+   {mode==='reset-password'&&error&&<p className="auth-resend-hint"><Link href="/forgot-password">Request a fresh password reset link</Link></p>}
    <div className="auth-switch">
     {mode==='login'&&<>New to Ship It? <Link href="/register">Create an account</Link></>}
     {mode==='register'&&<>Already have an account? <Link href="/login">Sign in</Link></>}

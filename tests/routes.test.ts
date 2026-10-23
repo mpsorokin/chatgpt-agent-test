@@ -18,3 +18,16 @@ describe('Next.js App Router route mapping',()=>{
   expect(absoluteAuthUrl('/reset-password','https://mpsorokin.github.io')).toBe('https://mpsorokin.github.io/chatgpt-agent-test/reset-password/');
  });
 });
+
+import { readAuthLinkError } from '../lib/auth-errors';
+describe('Supabase auth email errors',()=>{
+ it('identifies expired one-time links and tells users to request a new email',()=>{
+  const result=readAuthLinkError('#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired');
+  expect(result?.code).toBe('otp_expired');
+  expect(result?.message).toMatch(/fresh confirmation email/i);
+ });
+ it('returns null when the URL has no authentication error',()=>{
+  expect(readAuthLinkError('#access_token=redacted&token_type=bearer')).toBeNull();
+  expect(readAuthLinkError('')).toBeNull();
+ });
+});

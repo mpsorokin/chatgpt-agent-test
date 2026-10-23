@@ -90,3 +90,22 @@ The project retains the existing tasks, Kanban, Gantt, sprint planning, time tra
 ## Verification
 
 CI checks TypeScript, Vitest and the production static output of every route. Complete real-email, cross-browser and password-reset E2E testing remains to be performed with a test account.
+
+## Confirmation emails redirecting to localhost / expired OTPs
+
+If Supabase emails redirect to `http://localhost:3000/#error=access_denied&error_code=otp_expired`, the application code cannot fix the project's hosted Auth settings. In Supabase Dashboard → Authentication → URL Configuration, set the production **Site URL** to:
+
+```text
+https://mpsorokin.github.io/chatgpt-agent-test/
+```
+
+Allow these exact **Redirect URLs** (trailing slashes are important):
+
+```text
+https://mpsorokin.github.io/chatgpt-agent-test/auth/callback/
+https://mpsorokin.github.io/chatgpt-agent-test/reset-password/
+```
+
+If custom email templates use `{{ .SiteURL }}` for their direct app links, update them to use `{{ .RedirectTo }}` (or the default `{{ .ConfirmationURL }}` for Supabase-generated verification URLs).
+
+Old single-use expired URLs cannot be repaired. Visit `/resend-confirmation/`, enter the original email address, then click the newest link only once. `/auth/callback/` now displays clear auth-token errors and a resend action instead of an indefinite loading state. Email-scanner link prefetching can also consume verification URLs: use OTP-based templates or a click-to-confirm landing page when necessary.
