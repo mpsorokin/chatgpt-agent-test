@@ -1,129 +1,490 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#10131b" />
-  <title>Ship It — ChatGPT GitHub Test</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7fb">
+  <meta name="description" content="Ship It — a beautifully simple task workspace. Plan priorities, focus, and get things done.">
+  <title>Ship It — Your work, in flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { color-scheme: dark; font: 16px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; }
-    * { box-sizing: border-box; }
-    body { min-height: 100vh; margin: 0; color: #e9ecf5; background: radial-gradient(circle at 20% 0%, #263253 0, transparent 38%), #10131b; }
-    main { max-width: 720px; margin: 0 auto; padding: 72px 22px; }
-    .eyebrow { color: #a8b6ff; font-size: .76rem; letter-spacing: .18em; font-weight: 800; text-transform: uppercase; }
-    h1 { margin: 10px 0 4px; font-size: clamp(2.4rem, 7vw, 4.3rem); line-height: 1.05; letter-spacing: -.05em; }
-    .subtitle { color: #a4acc0; margin: 14px 0 36px; max-width: 510px; }
-    .panel { border: 1px solid #35405d; background: #191e2cde; border-radius: 20px; padding: 24px; box-shadow: 0 24px 70px #0004; }
-    .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 22px; }
-    h2 { margin: 0; font-size: 1.15rem; }
-    .count { color: #c2ccff; background: #303b60; border-radius: 999px; padding: 5px 12px; font-size: .85rem; }
-    form { display: flex; gap: 9px; }
-    input { flex: 1; min-width: 0; border: 1px solid #434e69; border-radius: 11px; padding: 13px; color: white; background: #111622; font: inherit; }
-    input:focus-visible, button:focus-visible { outline: 2px solid #a7afff; outline-offset: 3px; }
-    button { cursor: pointer; border: 0; font: inherit; font-weight: 700; border-radius: 11px; padding: 12px 18px; }
-    .primary { color: #10131b; background: #a4b5ff; }
-    .primary:hover { background: #c2cdff; }
-    .filters { display: flex; gap: 7px; margin-top: 20px; }
-    .filter { color: #aeb7cc; background: #272e40; font-size: .84rem; padding: 7px 13px; }
-    .filter[aria-pressed="true"] { color: white; background: #45598b; }
-    ul { padding: 0; margin: 14px 0 0; list-style: none; }
-    li { display: flex; align-items: center; gap: 12px; border-top: 1px solid #343b4c; padding: 14px 0; }
-    li input[type="checkbox"] { flex: none; width: 18px; height: 18px; accent-color: #a4b5ff; cursor: pointer; }
-    .task-label { overflow-wrap: anywhere; flex: 1; }
-    li.done .task-label { text-decoration: line-through; color: #838da1; }
-    .remove { padding: 5px 10px; color: #e8a9ae; background: #392b37; font-size: .8rem; }
-    .remove:hover { background: #553745; }
-    #empty { text-align: center; color: #8f9ab0; padding: 30px 0 10px; }
-    footer { text-align: center; color: #8d99b1; margin-top: 25px; font-size: .85rem; }
-    footer a { color: #bac7ff; }
-    @media(max-width: 420px) { .panel { padding: 17px; } form { flex-direction: column; } }
+    :root { font-family: "DM Sans", system-ui, sans-serif; color-scheme: light; --bg:#f6f7fb; --panel:#fff; --panel-alt:#f8f9fc; --text:#1a2031; --muted:#878da0; --line:#e9ebf1; --purple:#7460eb; --purple-deep:#5d4bd1; --purple-bg:#efecff; --shadow:0 10px 36px rgba(31,40,72,.045); }
+    :root[data-theme="dark"] { color-scheme:dark; --bg:#11151f; --panel:#1b2030; --panel-alt:#222839; --text:#f3f4ff; --muted:#9ba3ba; --line:#353c4f; --purple:#a194ff; --purple-deep:#8775f4; --purple-bg:#373158; --shadow:0 10px 36px rgba(0,0,0,.12); }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-size:14px; line-height:1.45; }
+    button, input, select, textarea { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline:3px solid #a99eff; outline-offset:3px; }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .app { min-height:100vh; display:grid; grid-template-columns:248px minmax(0,1fr); }
+    .sidebar { position:sticky; top:0; height:100vh; display:flex; flex-direction:column; background:#171b2a; color:#f5f6ff; padding:32px 18px 24px; }
+    .logo { display:flex; align-items:center; gap:12px; padding:0 16px 38px; color:white; text-decoration:none; }
+    .logo-mark { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; background:linear-gradient(145deg,#b3a2ff,#6b5bd8); color:white; box-shadow:0 9px 18px #6959d73b; font-size:22px; font-weight:800; }
+    .logo-name { font:700 24px/1 "Space Grotesk",sans-serif; letter-spacing:-1.3px; }
+    .logo-name span { color:#b7adff; }
+    .side-label { color:#737c99; text-transform:uppercase; font-weight:800; letter-spacing:1.65px; font-size:10px; padding:0 17px; margin:9px 0 12px; }
+    .nav { display:grid; gap:5px; }
+    .nav-btn { display:flex; align-items:center; gap:13px; width:100%; border:0; background:transparent; border-radius:11px; padding:12px 15px; text-align:left; color:#a8b0c8; font-weight:700; transition:background .2s,color .2s; }
+    .nav-btn:hover { background:#262c42; color:#fff; }
+    .nav-btn.active { color:#fff; background:#323153; }
+    .nav-btn.active .nav-icon { color:#c4b9ff; }
+    .nav-icon { width:20px; font-size:19px; text-align:center; line-height:1; }
+    .nav-count { margin-left:auto; font-size:11px; color:#d6d1ff; background:#525071; min-width:22px; border-radius:7px; text-align:center; padding:2px 5px; }
+    .side-bottom { margin-top:auto; display:grid; gap:15px; }
+    .side-tip { position:relative; overflow:hidden; padding:20px 17px 17px; border:1px solid #4b4578; border-radius:16px; background:linear-gradient(145deg,#403a73,#272d48); }
+    .side-tip:after { content:"✦"; position:absolute; right:-10px; top:-16px; font-size:100px; color:#b6a4ff14; }
+    .side-tip strong { display:block; font-size:14px; position:relative; }
+    .side-tip p { color:#b8b6d0; font-size:12px; margin:7px 0 0; position:relative; }
+    .side-footer { color:#737e9b; font-size:11px; padding:0 9px; display:flex; justify-content:space-between; align-items:center; }
+    .side-footer a { color:#a99efb; text-decoration:none; }
+    .main { min-width:0; padding:0 clamp(20px,4.4vw,78px) 65px; max-width:1670px; width:100%; margin:auto; }
+    .topbar { min-height:98px; display:flex; justify-content:space-between; align-items:center; gap:16px; border-bottom:1px solid var(--line); }
+    .breadcrumb { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px; }
+    .breadcrumb strong { color:var(--text); }
+    .top-actions { display:flex; gap:12px; align-items:center; }
+    .icon-btn { width:39px; height:39px; display:grid; place-items:center; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:12px; font-size:19px; }
+    .icon-btn:hover { border-color:var(--purple); }
+    .avatar { width:39px; height:39px; display:grid; place-items:center; border-radius:12px; background:#dcf5f0; color:#327f6e; font-weight:800; font-size:14px; }
+    .heading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin:38px 0 25px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:11px; letter-spacing:1.7px; text-transform:uppercase; color:var(--purple); font-weight:800; }
+    .dot { width:7px; height:7px; display:inline-block; border-radius:50%; background:#77c7a8; box-shadow:0 0 0 4px #77c7a820; }
+    h1,h2,h3,p { margin-top:0; }
+    h1,h2,h3 { font-family:"Space Grotesk",system-ui,sans-serif; }
+    h1 { font-size:clamp(28px,3.5vw,42px); letter-spacing:-1.8px; line-height:1.1; margin:9px 0 10px; }
+    .heading-copy { color:var(--muted); margin:0; font-size:14px; }
+    .primary { border:0; color:white; background:linear-gradient(120deg,#806bee,#6553dc); box-shadow:0 8px 18px #7862e32e; padding:12px 18px; font-weight:800; border-radius:12px; white-space:nowrap; }
+    .primary:hover { filter:brightness(1.06); }
+    .primary .plus { font-size:18px; padding-right:6px; }
+    .metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; margin-bottom:24px; }
+    .metric { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:23px 24px 19px; box-shadow:var(--shadow); min-height:160px; position:relative; overflow:hidden; }
+    .metric-top { display:flex; justify-content:space-between; align-items:center; gap:10px; color:var(--muted); font-size:12px; font-weight:700; }
+    .metric-icon { width:36px; height:36px; display:grid; place-items:center; background:var(--purple-bg); color:var(--purple); border-radius:11px; font-size:19px; }
+    .metric:nth-child(2) .metric-icon { color:#249c85; background:#e3f8ef; }
+    .metric:nth-child(3) .metric-icon { color:#e38c44; background:#fff0dc; }
+    :root[data-theme="dark"] .metric:nth-child(2) .metric-icon { background:#174d45; color:#69d0b5; }
+    :root[data-theme="dark"] .metric:nth-child(3) .metric-icon { background:#594329; color:#fac38c; }
+    .metric-value { font:700 35px/1 "Space Grotesk"; letter-spacing:-1px; margin:12px 0 6px; }
+    .metric-foot { color:var(--muted); font-size:12px; }
+    .metric-foot strong { color:#36af8d; }
+    .content-grid { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(270px,.8fr); gap:23px; align-items:start; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:19px; box-shadow:var(--shadow); }
+    .task-panel { overflow:hidden; }
+    .panel-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:24px 24px 13px; }
+    h2 { font-size:19px; letter-spacing:-.6px; margin:0; }
+    .hint { color:var(--muted); font-size:12px; }
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; padding:0 24px 18px; border-bottom:1px solid var(--line); }
+    .search { display:flex; align-items:center; gap:9px; background:var(--panel-alt); border:1px solid var(--line); border-radius:10px; padding:0 12px; flex:1; min-width:155px; color:var(--muted); }
+    .search input { width:100%; min-width:0; padding:10px 0; border:0; background:transparent; color:var(--text); outline:none; font-size:12px; }
+    .search:focus-within { border-color:var(--purple); }
+    .select { border:1px solid var(--line); background:var(--panel-alt); color:var(--text); padding:10px 11px; border-radius:10px; font-size:12px; font-weight:700; max-width:145px; }
+    .task-list { min-height:198px; }
+    .task-row { display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; gap:12px; padding:15px 23px; border-bottom:1px solid var(--line); transition:background .15s; }
+    .task-row:last-child { border-bottom:0; }
+    .task-row:hover { background:var(--panel-alt); }
+    .check { width:20px; height:20px; appearance:none; border:2px solid #c9ccda; border-radius:7px; background:transparent; cursor:pointer; position:relative; margin:0; }
+    .check:checked { background:var(--purple); border-color:var(--purple); }
+    .check:checked:after { content:"✓"; color:white; font-size:14px; position:absolute; inset:-3px 0 0 2px; font-weight:800; }
+    .task-name { font-weight:800; font-size:13px; margin:0 0 7px; overflow-wrap:anywhere; }
+    .task-row.is-done .task-name { text-decoration:line-through; color:var(--muted); }
+    .task-meta { display:flex; align-items:center; gap:7px; flex-wrap:wrap; font-size:11px; color:var(--muted); }
+    .pill { border-radius:7px; padding:3px 7px; font-size:10px; font-weight:800; letter-spacing:.1px; }
+    .priority-high { background:#ffebe6; color:#d4614c; }
+    .priority-medium { background:#fff1de; color:#bf8539; }
+    .priority-low { background:#e4f5ec; color:#409974; }
+    .cat-pill { background:var(--purple-bg); color:var(--purple); }
+    :root[data-theme="dark"] .priority-high { background:#593b3b; color:#ffaba4; }
+    :root[data-theme="dark"] .priority-medium { background:#574632; color:#f4c58e; }
+    :root[data-theme="dark"] .priority-low { background:#2e4b42; color:#9ddec3; }
+    .due.overdue { color:#db655b; font-weight:800; }
+    .due.today { color:#8c6be5; font-weight:800; }
+    .row-actions { display:flex; gap:5px; opacity:0; transition:opacity .15s; }
+    .task-row:hover .row-actions,.task-row:focus-within .row-actions { opacity:1; }
+    .mini-btn { background:transparent; border:0; color:var(--muted); border-radius:8px; padding:6px 7px; font-size:15px; }
+    .mini-btn:hover { background:var(--purple-bg); color:var(--purple); }
+    .empty { padding:40px 24px 47px; text-align:center; color:var(--muted); }
+    .empty-illustration { font-size:43px; margin-bottom:8px; }
+    .empty strong { display:block; color:var(--text); font-size:15px; margin-bottom:5px; }
+    .empty p { margin:0; font-size:12px; }
+    .task-footer { background:var(--panel-alt); padding:14px 24px; display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:11px; border-top:1px solid var(--line); }
+    .link-btn { border:0; padding:0; background:transparent; color:var(--purple); font-size:12px; font-weight:800; }
+    .right-col { display:grid; gap:20px; }
+    .focus-card { position:relative; padding:24px; background:linear-gradient(145deg,#7864e7,#5c4dd0); color:white; border-radius:20px; overflow:hidden; box-shadow:0 15px 30px #6251d228; }
+    .focus-card:before,.focus-card:after { content:""; position:absolute; border-radius:50%; border:1px solid #ffffff25; pointer-events:none; }
+    .focus-card:before { width:245px; height:245px; right:-134px; top:-75px; }
+    .focus-card:after { width:180px; height:180px; right:-104px; top:-43px; }
+    .focus-heading { display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:12px; color:#f3f0ff; position:relative; }
+    .focus-card h2 { font-size:22px; margin:17px 0 5px; position:relative; }
+    .focus-card p { color:#e0daff; font-size:12px; position:relative; margin:0; }
+    .timer { font:700 clamp(44px,5vw,65px)/1 "Space Grotesk"; letter-spacing:-2px; text-align:center; margin:29px 0 24px; position:relative; }
+    .timer-controls { display:flex; gap:9px; position:relative; }
+    .timer-controls button { border:1px solid #ffffff42; border-radius:10px; color:white; padding:11px 8px; font-weight:800; background:#ffffff30; flex:1; }
+    .timer-controls button:first-child { background:white; color:#6652d7; border-color:white; flex:2; }
+    .timer-controls button:hover { filter:brightness(1.07); }
+    .week-panel { padding:23px; }
+    .week-title { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .week-title span { color:var(--muted); font-size:11px; }
+    .week-desc { color:var(--muted); font-size:12px; margin-bottom:20px; }
+    .week-bars { height:110px; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); align-items:end; gap:10px; }
+    .day { display:grid; justify-items:center; gap:9px; align-items:end; min-width:0; }
+    .bar-track { height:81px; width:100%; max-width:26px; border-radius:7px; background:var(--panel-alt); display:flex; align-items:end; overflow:hidden; }
+    .bar-fill { width:100%; min-height:4px; border-radius:7px; background:linear-gradient(#b4a6ff,#8068ea); transition:height .2s; }
+    .bar-fill.no-tasks { background:var(--line); }
+    .day-label { font-size:10px; font-weight:800; color:var(--muted); }
+    .note { margin-top:18px; padding:13px; border-radius:11px; background:var(--panel-alt); color:var(--muted); font-size:11px; }
+    .note b { color:var(--text); }
+    .actions-panel { padding:22px 23px; }
+    .actions-panel h2 { margin-bottom:13px; }
+    .actions-panel button { width:100%; border:1px solid var(--line); border-radius:10px; background:var(--panel-alt); color:var(--text); font-weight:700; text-align:left; padding:11px 13px; margin-top:8px; font-size:12px; }
+    .actions-panel button:hover { border-color:var(--purple); }
+    .actions-panel button span { float:right; color:var(--muted); }
+    .bottom-note { margin:26px 0 0; display:flex; justify-content:space-between; gap:15px; color:var(--muted); font-size:11px; }
+    .bottom-note a { color:var(--purple); text-decoration:none; font-weight:800; }
+    dialog { border:1px solid var(--line); border-radius:20px; width:min(460px,calc(100vw - 25px)); max-height:90vh; overflow:auto; background:var(--panel); color:var(--text); padding:0; box-shadow:0 30px 85px #0005; }
+    dialog::backdrop { background:#121426aa; backdrop-filter:blur(5px); }
+    .modal-head { display:flex; align-items:center; justify-content:space-between; padding:23px 26px 14px; }
+    .modal-head h2 { font-size:21px; }
+    .modal-close { border:0; background:var(--panel-alt); color:var(--text); width:31px; height:31px; border-radius:9px; font-size:18px; }
+    .modal-body { padding:0 26px 26px; }
+    .field { display:grid; gap:7px; margin:14px 0; }
+    .field label { font-size:11px; font-weight:800; color:var(--muted); }
+    .field input,.field select,.field textarea { border:1px solid var(--line); border-radius:10px; background:var(--panel-alt); color:var(--text); padding:11px 12px; width:100%; }
+    .field textarea { min-height:75px; resize:vertical; }
+    .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; }
+    .secondary { background:var(--panel-alt); border:1px solid var(--line); border-radius:11px; padding:11px 17px; font-weight:800; color:var(--text); }
+    #toast { position:fixed; bottom:22px; left:50%; transform:translate(-50%,18px); z-index:99; background:#242943; color:white; padding:12px 18px; border-radius:12px; box-shadow:0 10px 40px #0003; opacity:0; pointer-events:none; transition:opacity .2s,transform .2s; display:flex; align-items:center; gap:15px; max-width:calc(100vw - 30px); }
+    #toast.show { opacity:1; pointer-events:auto; transform:translate(-50%,0); }
+    #toast button { border:0; background:transparent; color:#b5a9ff; font-weight:800; padding:0; }
+    @media(max-width:1180px) { .app { grid-template-columns:205px minmax(0,1fr); } .sidebar { padding-left:11px; padding-right:11px; } .main { padding-left:27px; padding-right:27px; } .content-grid { grid-template-columns:minmax(0,1.3fr) minmax(245px,.8fr); gap:14px; } .metrics { gap:12px; } .metric { padding:19px; } .focus-card { padding:20px; } }
+    @media(max-width:970px) { .content-grid { grid-template-columns:1fr; } .right-col { grid-template-columns:1fr 1fr; } .actions-panel { grid-column:1/-1; } .focus-card h2 { font-size:19px; } .metric { min-height:145px; } }
+    @media(max-width:700px) { .app { display:block; } .sidebar { position:static; height:auto; padding:13px 18px; flex-direction:row; align-items:center; gap:10px; } .logo { padding:0; margin-right:auto; gap:9px; } .logo-mark { width:32px; height:32px; border-radius:10px; font-size:18px; } .logo-name { font-size:21px; } .sidebar .side-label,.side-bottom { display:none; } .nav { display:flex; gap:3px; } .nav-btn { padding:9px 10px; width:auto; } .nav-btn .nav-text,.nav-count { display:none; } .nav-icon { width:auto; } .main { padding:0 18px 38px; } .topbar { min-height:65px; } .heading { margin:27px 0 21px; align-items:start; } .heading .primary { padding:10px 13px; } .metrics { gap:9px; } .metric { min-height:130px; padding:14px; border-radius:15px; } .metric-value { font-size:29px; } .metric-icon { width:29px; height:29px; font-size:15px; } .metric-top { font-size:10px; } .metric-foot { font-size:10px; } }
+    @media(max-width:490px) { h1 { font-size:30px; } .heading-copy { font-size:12px; } .metrics { grid-template-columns:repeat(2,1fr); } .metric:last-child { grid-column:1/-1; min-height:112px; } .topbar .breadcrumb { font-size:11px; } .top-actions { gap:7px; } .avatar,.icon-btn { width:34px; height:34px; } .heading { flex-wrap:wrap; } .heading .primary { margin-left:auto; } .right-col { grid-template-columns:1fr; } .actions-panel { grid-column:auto; } .panel-head,.toolbar { padding-left:15px; padding-right:15px; } .task-row { padding-left:15px; padding-right:12px; gap:10px; } .row-actions { opacity:1; } .task-footer { padding-left:15px; padding-right:15px; } .field-grid { grid-template-columns:1fr; gap:0; } }
+    @media(prefers-reduced-motion:reduce) { *,*:before,*:after { transition-duration:.01ms !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
-  <main>
-    <p class="eyebrow">GitHub × ChatGPT · Integration experiment</p>
-    <h1>Ship It 🚀</h1>
-    <p class="subtitle">A tiny task board written and committed directly from ChatGPT. No frameworks, no build step, no backend.</p>
-    <section class="panel" aria-labelledby="board-title">
-      <div class="top"><h2 id="board-title">Your tasks</h2><span class="count" id="count" aria-live="polite"></span></div>
-      <form id="task-form">
-        <input id="task-input" name="task" placeholder="What needs shipping?" aria-label="New task" maxlength="160" required autocomplete="off" />
-        <button class="primary" type="submit">Add task +</button>
-      </form>
-      <div class="filters" role="group" aria-label="Filter tasks">
-        <button class="filter" type="button" data-filter="all" aria-pressed="true">All</button>
-        <button class="filter" type="button" data-filter="active" aria-pressed="false">Active</button>
-        <button class="filter" type="button" data-filter="done" aria-pressed="false">Done</button>
+  <div class="app">
+    <aside class="sidebar" aria-label="Sidebar">
+      <a class="logo" href="#overview" aria-label="Ship It home"><span class="logo-mark">↗</span><span class="logo-name">ship<span>it.</span></span></a>
+      <div class="side-label">Workspace</div>
+      <nav class="nav" aria-label="Task views">
+        <button class="nav-btn active" data-view="overview"><span class="nav-icon">▦</span><span class="nav-text">Overview</span></button>
+        <button class="nav-btn" data-view="today"><span class="nav-icon">◷</span><span class="nav-text">Today</span><span class="nav-count" id="today-count">0</span></button>
+        <button class="nav-btn" data-view="upcoming"><span class="nav-icon">▤</span><span class="nav-text">Upcoming</span></button>
+        <button class="nav-btn" data-view="completed"><span class="nav-icon">✓</span><span class="nav-text">Completed</span></button>
+      </nav>
+      <div class="side-bottom">
+        <div class="side-tip"><strong>✦ Small steps. Big wins.</strong><p>Progress isn't about doing everything. It's about shipping what matters.</p></div>
+        <div class="side-footer"><span>SHIP IT / v2.0</span><a href="https://github.com/mpsorokin/chatgpt-agent-test" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
       </div>
-      <ul id="tasks" aria-label="Tasks"></ul>
-      <p id="empty" hidden>No tasks here. Add your first one ✨</p>
-    </section>
-    <footer>Changes persist in your browser using localStorage · <a href="https://github.com/mpsorokin/chatgpt-agent-test">View source on GitHub</a></footer>
-  </main>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumb"><span>Workspace</span><span>›</span><strong id="breadcrumb">Overview</strong></div>
+        <div class="top-actions"><button id="theme-btn" class="icon-btn" title="Toggle color theme" aria-label="Toggle color theme">☾</button><span class="avatar" title="Your private workspace">YOU</span></div>
+      </header>
+      <section class="heading" aria-labelledby="page-title">
+        <div><span class="eyebrow"><i class="dot" aria-hidden="true"></i> YOUR PERSONAL WORKSPACE</span><h1 id="page-title">Make today count<span style="color:var(--purple)">.</span></h1><p class="heading-copy" id="greeting">A little progress every day adds up. Let's make it happen.</p></div>
+        <button class="primary" id="new-task-btn"><span class="plus">+</span> New task</button>
+      </section>
+      <section class="metrics" aria-label="Task statistics">
+        <article class="metric"><div class="metric-top"><span>Total tasks</span><span class="metric-icon">▦</span></div><div class="metric-value" id="total-stat">0</div><div class="metric-foot">Everything on your radar</div></article>
+        <article class="metric"><div class="metric-top"><span>Completed</span><span class="metric-icon">✓</span></div><div class="metric-value" id="done-stat">0</div><div class="metric-foot" id="done-foot">You're building momentum</div></article>
+        <article class="metric"><div class="metric-top"><span>In progress</span><span class="metric-icon">↗</span></div><div class="metric-value" id="active-stat">0</div><div class="metric-foot" id="active-foot">Let's keep things moving</div></article>
+      </section>
+      <div class="content-grid">
+        <section class="panel task-panel" aria-labelledby="tasks-title">
+          <div class="panel-head"><div><h2 id="tasks-title">Your tasks</h2><span class="hint" id="list-subtitle">Stay focused on the next step</span></div><span class="hint" id="visible-count"></span></div>
+          <div class="toolbar">
+            <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Search tasks... ( / )" aria-label="Search tasks"></label>
+            <select id="sort" class="select" aria-label="Sort tasks"><option value="smart">Sort: Priority</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="due">Due date</option><option value="title">A to Z</option></select>
+          </div>
+          <div id="task-list" class="task-list" aria-live="polite"></div>
+          <div class="task-footer"><span id="left-label">0 tasks remaining</span><button class="link-btn" id="clear-completed">Clear completed</button></div>
+        </section>
+        <div class="right-col">
+          <section class="focus-card" aria-labelledby="focus-title">
+            <div class="focus-heading"><span>✦ FOCUS MODE</span><span>◉ Stay in flow</span></div>
+            <h2 id="focus-title">Time to lock in.</h2><p>One thing at a time. You've got this.</p>
+            <div class="timer" id="timer" role="timer" aria-label="Focus timer">25:00</div>
+            <div class="timer-controls"><button id="timer-start">▶ Start focus</button><button id="timer-reset" aria-label="Reset focus timer">↻ Reset</button></div>
+          </section>
+          <section class="panel week-panel" aria-labelledby="week-title"><div class="week-title"><h2 id="week-title">Your week</h2><span>Next 7 days</span></div><p class="week-desc">Tasks due each day</p><div id="week-bars" class="week-bars" aria-label="Next seven days due task counts"></div><div class="note" id="week-note"></div></section>
+          <section class="panel actions-panel" aria-labelledby="tools-title"><h2 id="tools-title">Workspace tools</h2><button id="export-btn">↓ Export your tasks <span>JSON</span></button><button id="import-btn">↑ Import backup <span>JSON</span></button><input type="file" id="import-file" accept="application/json,.json" hidden><div class="note">Your data stays in this browser. Export a backup to move it to another device.</div></section>
+        </div>
+      </div>
+      <footer class="bottom-note"><span>Made with ✦ and a little AI magic · No accounts. No tracking.</span><a href="https://github.com/mpsorokin/chatgpt-agent-test" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a></footer>
+    </main>
+  </div>
+  <dialog id="task-dialog" aria-labelledby="modal-title">
+    <div class="modal-head"><h2 id="modal-title">New task</h2><button class="modal-close" id="close-dialog" aria-label="Close dialog">×</button></div>
+    <form id="task-form" class="modal-body">
+      <div class="field"><label for="task-title">TASK NAME *</label><input id="task-title" required maxlength="180" placeholder="What are we shipping?" autocomplete="off"></div>
+      <div class="field-grid"><div class="field"><label for="task-priority">PRIORITY</label><select id="task-priority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div><div class="field"><label for="task-category">CATEGORY</label><select id="task-category"><option>Work</option><option>Personal</option><option>Learning</option><option>Other</option></select></div></div>
+      <div class="field"><label for="task-date">DUE DATE (OPTIONAL)</label><input id="task-date" type="date"></div>
+      <div class="field"><label for="task-notes">NOTES (OPTIONAL)</label><textarea id="task-notes" maxlength="1200" placeholder="Any important details..."></textarea></div>
+      <div class="modal-footer"><button type="button" class="secondary" id="cancel-dialog">Cancel</button><button type="submit" class="primary" id="save-task">Create task</button></div>
+    </form>
+  </dialog>
+  <div id="toast" role="status" aria-live="polite"><span id="toast-message"></span><button id="toast-action" hidden>Undo</button></div>
   <script>
     (() => {
       "use strict";
-      const KEY = "chatgpt-agent-test:tasks:v1";
-      const list = document.querySelector("#tasks");
-      const count = document.querySelector("#count");
-      const empty = document.querySelector("#empty");
-      const input = document.querySelector("#task-input");
-      let filter = "all";
-      let tasks = [];
-      try {
-        const saved = JSON.parse(localStorage.getItem(KEY) || "[]");
-        if (Array.isArray(saved)) {
-          tasks = saved.filter(t => t && typeof t.id === "string" && typeof t.text === "string" && typeof t.done === "boolean");
-        }
-      } catch { /* Invalid stored data: start with a clean board. */ }
-      const save = () => {
-        try { localStorage.setItem(KEY, JSON.stringify(tasks)); }
-        catch { /* The board still works when storage is unavailable. */ }
+      const OLD_KEY = "chatgpt-agent-test:tasks:v1";
+      const KEY = "chatgpt-agent-test:tasks:v2";
+      const THEME_KEY = "chatgpt-agent-test:theme";
+      const $ = (selector) => document.querySelector(selector);
+      const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+      const todayKey = (date = new Date()) => {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
       };
-      function render() {
-        list.replaceChildren();
-        const visible = tasks.filter(t => filter === "all" || (filter === "done" ? t.done : !t.done));
-        count.textContent = tasks.filter(t => t.done).length + " / " + tasks.length + " done";
-        empty.hidden = visible.length !== 0;
-        for (const task of visible) {
-          const item = document.createElement("li");
-          if (task.done) item.classList.add("done");
-          const check = document.createElement("input");
-          check.type = "checkbox";
-          check.checked = task.done;
-          check.setAttribute("aria-label", "Mark " + task.text + " as " + (task.done ? "active" : "done"));
-          check.addEventListener("change", () => { task.done = check.checked; save(); render(); });
-          const label = document.createElement("span");
-          label.className = "task-label";
-          label.textContent = task.text;
-          const remove = document.createElement("button");
-          remove.type = "button";
-          remove.className = "remove";
-          remove.textContent = "Delete";
-          remove.setAttribute("aria-label", "Delete " + task.text);
-          remove.addEventListener("click", () => { tasks = tasks.filter(t => t.id !== task.id); save(); render(); });
-          item.append(check, label, remove);
-          list.append(item);
+      const addDays = (date, n) => { const d = new Date(date); d.setDate(d.getDate() + n); return d; };
+      const displayDate = (key) => { const d = new Date(key + "T12:00:00"); return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { month:"short", day:"numeric" }); };
+      const dateIsValid = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(new Date(s + "T12:00:00").getTime());
+      const uid = () => (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+      const normalize = (t) => {
+        if (!t || typeof t !== "object" || typeof t.text !== "string" || !t.text.trim()) return null;
+        return { id:typeof t.id === "string" ? t.id : uid(), text:t.text.trim().slice(0,180),
+          done:!!t.done, priority:["high","medium","low"].includes(t.priority) ? t.priority : "medium",
+          category:["Work","Personal","Learning","Other"].includes(t.category) ? t.category : "Work",
+          due:dateIsValid(t.due) ? t.due : "", notes:typeof t.notes === "string" ? t.notes.slice(0,1200) : "",
+          created:Number.isFinite(t.created) ? t.created : Date.now() };
+      };
+      const load = () => {
+        let raw;
+        try { raw = localStorage.getItem(KEY); } catch { return []; }
+        if (raw !== null) {
+          try { const value = JSON.parse(raw); return Array.isArray(value) ? value.map(normalize).filter(Boolean) : []; } catch { return []; }
+        }
+        let old;
+        try { old = localStorage.getItem(OLD_KEY); } catch { return []; }
+        if (old !== null) {
+          try { const value = JSON.parse(old); return Array.isArray(value) ? value.map(normalize).filter(Boolean) : []; } catch { return []; }
+        }
+        const base = Date.now();
+        return [
+          {id:uid(),text:"Explore your new Ship It dashboard",done:false,priority:"high",category:"Personal",due:todayKey(),notes:"Click the pencil to edit any task.",created:base},
+          {id:uid(),text:"Plan the next thing worth shipping",done:false,priority:"medium",category:"Work",due:todayKey(addDays(new Date(),1)),notes:"Make it clear and actionable.",created:base-1},
+          {id:uid(),text:"Try a 25-minute focus session",done:false,priority:"low",category:"Learning",due:"",notes:"Use the purple focus timer.",created:base-2}
+        ];
+      };
+      let tasks = load(), view = "overview", editId = null, toastTimer, toastCallback = null;
+      let timerLeft = 25 * 60, timerInterval = null, timerEnds = 0;
+      const save = () => { try { localStorage.setItem(KEY, JSON.stringify(tasks)); } catch { showToast("Storage unavailable. Export a backup to save."); } };
+      try { const saved = localStorage.getItem(THEME_KEY); if (saved === "dark" || saved === "light") document.documentElement.dataset.theme = saved; } catch {}
+      const make = (tag, className, text) => { const el = document.createElement(tag); if (className) el.className = className; if (text !== undefined) el.textContent = text; return el; };
+      function showToast(message, actionLabel, callback) {
+        clearTimeout(toastTimer);
+        toastCallback = callback || null;
+        $("#toast-message").textContent = message;
+        $("#toast-action").hidden = !callback;
+        if (actionLabel) $("#toast-action").textContent = actionLabel;
+        $("#toast").classList.add("show");
+        toastTimer = setTimeout(() => { $("#toast").classList.remove("show"); toastCallback = null; }, 4800);
+      }
+      $("#toast-action").addEventListener("click", () => { const callback = toastCallback; $("#toast").classList.remove("show"); clearTimeout(toastTimer); toastCallback = null; if (callback) callback(); });
+      const priorityOrder = { high:0, medium:1, low:2 };
+      function belongs(t) {
+        const today = todayKey();
+        if (view === "today") return !t.done && t.due && t.due <= today;
+        if (view === "upcoming") return !t.done && t.due && t.due > today;
+        if (view === "completed") return t.done;
+        return true;
+      }
+      function sorted(arr) {
+        const sort = $("#sort").value;
+        return arr.sort((a,b) => {
+          if (sort === "newest") return b.created-a.created;
+          if (sort === "oldest") return a.created-b.created;
+          if (sort === "due") return (a.due || "9999").localeCompare(b.due || "9999") || priorityOrder[a.priority]-priorityOrder[b.priority];
+          if (sort === "title") return a.text.localeCompare(b.text);
+          return Number(a.done)-Number(b.done) || priorityOrder[a.priority]-priorityOrder[b.priority] || (a.due || "9999").localeCompare(b.due || "9999") || b.created-a.created;
+        });
+      }
+      function dueDescription(key) {
+        if (!key) return "";
+        const today = todayKey();
+        if (key === today) return "Today";
+        if (key === todayKey(addDays(new Date(),1))) return "Tomorrow";
+        return displayDate(key);
+      }
+      function renderTasks() {
+        const query = $("#search").value.trim().toLowerCase();
+        const visible = sorted(tasks.filter(t => belongs(t) && (t.text.toLowerCase().includes(query) || t.category.toLowerCase().includes(query) || t.notes.toLowerCase().includes(query))));
+        const target = $("#task-list");
+        target.replaceChildren();
+        $("#visible-count").textContent = visible.length + " shown";
+        if (visible.length === 0) {
+          const empty = make("div","empty");
+          empty.append(make("div","empty-illustration",query ? "⌕" : "✧"),make("strong","",query ? "No matching tasks" : "All clear here!"),make("p","",query ? "Try searching for something else." : "Create a task, or enjoy a moment of calm."));
+          target.append(empty);
+        }
+        for (const t of visible) {
+          const row = make("article","task-row" + (t.done ? " is-done" : ""));
+          const check = make("input","check");
+          check.type = "checkbox"; check.checked = t.done;
+          check.setAttribute("aria-label",(t.done ? "Mark as incomplete: " : "Complete: ") + t.text);
+          check.addEventListener("change", () => { t.done = check.checked; save(); render(); if (t.done) showToast("Nice work — task completed ✨"); });
+          const body = make("div","");
+          const title = make("p","task-name",t.text);
+          const meta = make("div","task-meta");
+          meta.append(make("span","pill priority-"+t.priority,t.priority[0].toUpperCase()+t.priority.slice(1)),make("span","pill cat-pill",t.category));
+          if (t.due) {
+            const dueClass = !t.done && t.due < todayKey() ? " overdue" : t.due === todayKey() ? " today" : "";
+            meta.append(make("span","due"+dueClass,"◷ "+dueDescription(t.due)));
+          }
+          if (t.notes) { const note = make("span","", "● Notes"); note.title = t.notes; meta.append(note); }
+          body.append(title,meta);
+          const actions = make("div","row-actions");
+          const edit = make("button","mini-btn","✎"); edit.type="button"; edit.title="Edit task"; edit.setAttribute("aria-label","Edit "+t.text); edit.addEventListener("click",() => openModal(t));
+          const del = make("button","mini-btn","×"); del.type="button"; del.title="Delete task"; del.setAttribute("aria-label","Delete "+t.text); del.addEventListener("click",() => {
+            const index=tasks.findIndex(item=>item.id===t.id);
+            if(index<0) return;
+            tasks.splice(index,1);save();render();
+            showToast("Task deleted","Undo",() => { if (!tasks.some(item=>item.id===t.id)) {tasks.splice(Math.min(index,tasks.length),0,t);save();render();} });
+          });
+          actions.append(edit,del); row.append(check,body,actions); target.append(row);
         }
       }
-      document.querySelector("#task-form").addEventListener("submit", event => {
-        event.preventDefault();
-        const text = input.value.trim();
-        if (!text) return;
-        tasks.unshift({ id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random(), text, done: false });
-        input.value = "";
-        save();
-        render();
-        input.focus();
+      function renderWeek() {
+        const now=new Date(), days=Array.from({length:7},(_,i)=>addDays(now,i));
+        const counts=days.map(d=>tasks.filter(t=>!t.done && t.due===todayKey(d)).length);
+        const max=Math.max(1,...counts);
+        const el=$("#week-bars"); el.replaceChildren();
+        days.forEach((d,i)=>{
+          const wrap=make("div","day");
+          const track=make("div","bar-track");
+          const bar=make("div","bar-fill"+(counts[i]===0?" no-tasks":""));
+          bar.style.height=(counts[i]?Math.max(15,counts[i]/max*100):5)+"%";
+          track.title=counts[i]+" task"+(counts[i]===1?"":"s")+" due "+d.toLocaleDateString();
+          track.append(bar);
+          wrap.append(track,make("span","day-label",d.toLocaleDateString(undefined,{weekday:"short"})));
+          el.append(wrap);
+        });
+        const sum=counts.reduce((a,b)=>a+b,0);
+        $("#week-note").replaceChildren();
+        const bold=make("b","",String(sum)+" upcoming deadline"+(sum===1?"":"s"));
+        $("#week-note").append(bold,document.createTextNode(" in the next 7 days. Each bar reflects your actual tasks."));
+      }
+      const names={overview:"Overview",today:"Today",upcoming:"Upcoming",completed:"Completed"};
+      function render() {
+        const done=tasks.filter(t=>t.done).length, active=tasks.length-done;
+        $("#total-stat").textContent=tasks.length;
+        $("#done-stat").textContent=done;
+        $("#active-stat").textContent=active;
+        $("#done-foot").textContent=tasks.length ? Math.round(done/tasks.length*100)+"% completion rate" : "You're building momentum";
+        $("#active-foot").textContent=active===0?"You're all caught up!":active+" task"+(active===1?"":"s")+" to ship";
+        $("#today-count").textContent=tasks.filter(t=>!t.done && t.due && t.due<=todayKey()).length;
+        $("#left-label").textContent=active+" task"+(active===1?"":"s")+" remaining";
+        $("#clear-completed").disabled=done===0;
+        $("#breadcrumb").textContent=names[view];
+        $("#tasks-title").textContent=view==="overview"?"Your tasks":names[view]+" tasks";
+        const descriptions={overview:"Stay focused on the next step",today:"Due today and overdue",upcoming:"Everything coming up next",completed:"Look at what you've accomplished"};
+        $("#list-subtitle").textContent=descriptions[view];
+        $$(".nav-btn").forEach(b=>{b.classList.toggle("active",b.dataset.view===view);if(b.dataset.view===view)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
+        renderTasks();renderWeek();
+      }
+      function openModal(task) {
+        editId=task?task.id:null;
+        $("#modal-title").textContent=task?"Edit task":"Create a task";
+        $("#save-task").textContent=task?"Save changes":"Create task";
+        $("#task-title").value=task?task.text:"";
+        $("#task-priority").value=task?task.priority:"medium";
+        $("#task-category").value=task?task.category:"Work";
+        $("#task-date").value=task?task.due:"";
+        $("#task-notes").value=task?task.notes:"";
+        $("#task-dialog").showModal();
+        $("#task-title").focus();
+      }
+      function closeModal() { $("#task-dialog").close(); editId=null; }
+      $("#new-task-btn").addEventListener("click",()=>openModal());
+      $("#close-dialog").addEventListener("click",closeModal);
+      $("#cancel-dialog").addEventListener("click",closeModal);
+      $("#task-dialog").addEventListener("click",e=>{if(e.target===$("#task-dialog"))closeModal();});
+      $("#task-dialog").addEventListener("close",()=>{editId=null;});
+      $("#task-form").addEventListener("submit",e=>{
+        e.preventDefault();
+        const text=$("#task-title").value.trim();
+        if(!text)return;
+        const data={text,priority:$("#task-priority").value,category:$("#task-category").value,due:$("#task-date").value,notes:$("#task-notes").value.trim()};
+        if(editId){
+          const task=tasks.find(t=>t.id===editId);
+          if(task) Object.assign(task,data);
+          showToast("Changes saved");
+        } else {
+          tasks.unshift({id:uid(),...data,done:false,created:Date.now()});
+          showToast("Task created ✨");
+        }
+        closeModal();save();render();
       });
-      document.querySelectorAll("[data-filter]").forEach(button => {
-        button.addEventListener("click", () => {
-          filter = button.dataset.filter;
-          document.querySelectorAll("[data-filter]").forEach(b => b.setAttribute("aria-pressed", String(b === button)));
-          render();
+      $$(".nav-btn").forEach(b=>b.addEventListener("click",()=>{view=b.dataset.view;$("#search").value="";render();}));
+      $("#search").addEventListener("input",renderTasks);
+      $("#sort").addEventListener("change",renderTasks);
+      $("#clear-completed").addEventListener("click",()=>{
+        const removed=tasks.filter(t=>t.done);
+        if(!removed.length)return;
+        tasks=tasks.filter(t=>!t.done);save();render();
+        showToast(removed.length+" completed task"+(removed.length===1?"":"s")+" cleared","Undo",()=>{
+          const existing=new Set(tasks.map(t=>t.id));
+          tasks.push(...removed.filter(t=>!existing.has(t.id)));save();render();
         });
       });
-      render();
+      $("#theme-btn").addEventListener("click",()=>{
+        const next=document.documentElement.dataset.theme==="dark"?"light":"dark";
+        document.documentElement.dataset.theme=next;
+        $("#theme-btn").textContent=next==="dark"?"☀":"☾";
+        try{localStorage.setItem(THEME_KEY,next);}catch{}
+      });
+      $("#theme-btn").textContent=document.documentElement.dataset.theme==="dark"?"☀":"☾";
+      document.addEventListener("keydown",e=>{
+        const target=e.target;
+        const typing=target && (["INPUT","TEXTAREA","SELECT"].includes(target.tagName)||target.isContentEditable);
+        if($("#task-dialog").open || typing || e.altKey || e.metaKey || e.ctrlKey)return;
+        if(e.key==="/"){e.preventDefault();$("#search").focus();}
+        if(e.key.toLowerCase()==="n"){e.preventDefault();openModal();}
+      });
+      function renderTimer() {
+        $("#timer").textContent=String(Math.floor(timerLeft/60)).padStart(2,"0")+":"+String(timerLeft%60).padStart(2,"0");
+        $("#timer-start").textContent=timerInterval?"Ⅱ Pause":"▶ "+(timerLeft===1500?"Start focus":"Resume");
+      }
+      $("#timer-start").addEventListener("click",()=>{
+        if(timerInterval){clearInterval(timerInterval);timerInterval=null;timerLeft=Math.max(0,Math.ceil((timerEnds-Date.now())/1000));renderTimer();return;}
+        if(timerLeft<=0)timerLeft=1500;
+        timerEnds=Date.now()+timerLeft*1000;
+        timerInterval=setInterval(()=>{
+          timerLeft=Math.max(0,Math.ceil((timerEnds-Date.now())/1000));
+          renderTimer();
+          if(timerLeft===0){clearInterval(timerInterval);timerInterval=null;renderTimer();showToast("Focus session complete! Take a break 🎉");}
+        },250);
+        renderTimer();
+      });
+      $("#timer-reset").addEventListener("click",()=>{if(timerInterval)clearInterval(timerInterval);timerInterval=null;timerLeft=1500;renderTimer();});
+      $("#export-btn").addEventListener("click",()=>{
+        const file=new Blob([JSON.stringify({version:2,exportedAt:new Date().toISOString(),tasks},null,2)],{type:"application/json"});
+        const url=URL.createObjectURL(file),a=document.createElement("a");
+        a.href=url;a.download="ship-it-backup-"+todayKey()+".json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+        showToast("Backup downloaded");
+      });
+      $("#import-btn").addEventListener("click",()=>$("#import-file").click());
+      $("#import-file").addEventListener("change",async e=>{
+        const file=e.target.files[0];e.target.value="";if(!file)return;
+        if(file.size>2*1024*1024){showToast("Backup is too large (max 2 MB).");return;}
+        try {
+          const data=JSON.parse(await file.text());
+          const raw=Array.isArray(data)?data:data.tasks;
+          if(!Array.isArray(raw)||raw.length>5000)throw new Error("Invalid backup");
+          const clean=raw.map(normalize);
+          if(clean.some(t=>t===null))throw new Error("Invalid task data");
+          if(!window.confirm("Import "+clean.length+" tasks? This will replace your current list."))return;
+          tasks=clean;save();render();showToast("Backup imported successfully");
+        }catch{showToast("Couldn't read that backup file.");}
+      });
+      const hour=new Date().getHours();
+      $("#greeting").textContent=(hour<12?"Good morning":hour<18?"Good afternoon":"Good evening")+". "+new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})+" · Let's make progress.";
+      save();render();renderTimer();
     })();
   </script>
 </body>
