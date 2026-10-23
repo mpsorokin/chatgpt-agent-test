@@ -113,7 +113,7 @@ export default function WorkspaceApp({children}:{children:ReactNode}){
  const common={tasks:filtered,allTasks:all,projects:state.projects,openTask,createTask,toggleTask,updateStatus,startTracking,stopTracking,activeTaskId:tracking.time.active?.taskId??null,selectedProject:project};
  const contextValue:WorkspaceContextValue={
   common,planning:planningActions,sprints:state.sprints??[],onSprintAdd:addSprint,onSprintEdit:editSprint,onSprintDelete:deleteSprint,
-  tasks:all,projects:state.projects,time:tracking.time,now:tracking.now,startTimer:tracking.start,stopTimer,
+  tasks:all,projects:state.projects,time:tracking.time,now:tracking.now,startTimer:tracking.start,stopTimer:stopTracking,
   addTime:tracking.add,deleteTime:tracking.remove,notify,search,sort
  };
  const projectNav=(p:Project)=><button key={p.id} className={'project-nav '+(project===p.id?'selected':'')} onClick={()=>{setProject(project===p.id?null:p.id);setSidebarOpen(false)}}><span className="project-mark" style={{background:p.color}}/><span>{p.id}</span><small>{all.filter(t=>t.project===p.id&&t.status!=='done').length}</small></button>;
