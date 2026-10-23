@@ -1,45 +1,51 @@
-# Ship It 3.0 🚀
+# Ship It 4.0 ✦
 
-An elegant, fully client-side productivity workspace created and deployed directly from a ChatGPT conversation.
+A fast, private productivity workspace built with **Next.js 16, React 19 and TypeScript**.
 
-**[Open the live app](https://mpsorokin.github.io/chatgpt-agent-test/)** · [Source code](./index.html)
+**Live:** https://mpsorokin.github.io/chatgpt-agent-test/
 
-## What's new in v3
+## Features
 
-- **Dashboard:** daily momentum, task statistics, a priority queue, and a seven-day due-date chart.
-- **Kanban board:** drag and drop tasks between To do, In progress, and Done.
-- **Projects:** create projects, filter tasks by project, and follow progress.
-- **Task editor:** create, edit, complete, and delete tasks; add descriptions, priorities, deadlines, and subtasks.
-- **All tasks:** searchable, sortable list of work across projects.
-- **Calendar:** a monthly view of upcoming deadlines.
-- **Insights:** completion rate, project breakdown, priority distribution, and a chart of recently completed tasks.
-- **Focus mode:** a timer with 25-, 5-, and 15-minute sessions, pause, and reset.
-- **Command menu:** press `Ctrl+K` or `⌘K` for actions and navigation. Press `N` to add a task and `/` to search.
-- **Dark mode**, **responsive layouts**, and **JSON export/import**.
+- Dashboard with live activity, priority queue, project progress and a seven-day task chart
+- Kanban board with drag-and-drop and accessible status dropdowns
+- Searchable and sortable list, monthly calendar, and analytics
+- Tasks with projects, deadlines, priorities, notes and subtasks
+- Focus timer (25/5/15 minutes), keyboard shortcuts and command menu
+- Dark mode, responsive design, JSON backup and restore
+- **Automatic migration** of v1, v2 and v3 localStorage data, preserving tasks, projects, descriptions and checklists
+- No login, remote API, database, tracking, or required backend
 
-## Data and migration
+## Stack and structure
 
-Data is stored locally in your browser using `localStorage`. There are no accounts, analytics, remote servers, or synchronization. **Export a JSON backup** to move tasks to another device.
+- Next.js App Router with static export (`output: 'export'`)
+- React 19 client components, TypeScript and CSS
+- Pure, testable domain logic in `lib/`
+- `components/` for views, task editor and focus timer
+- `tests/` with Vitest unit tests for migrations and task state
+- GitHub Actions for type checking, testing and GitHub Pages deployment
 
-Existing tasks from v1 and v2 are automatically migrated on first use of v3 in the same browser. Your original browser data is not deleted.
-
-> Note: imported completed tasks without historical completion timestamps count toward overall completion metrics, but are not retroactively included in the seven-day completion history.
-
-## Run locally
-
-Clone the repository and open `index.html` in a browser:
+## Develop
 
 ```bash
-git clone https://github.com/mpsorokin/chatgpt-agent-test.git
-cd chatgpt-agent-test
+npm install
+NEXT_PUBLIC_BASE_PATH='' npm run dev
+npm run typecheck
+npm test
+npm run build
 ```
 
-No frontend dependencies, build steps, or backend are needed. Web fonts are optional, with system font fallbacks.
+By default the app is configured to deploy under `/chatgpt-agent-test` so that GitHub Pages keeps the original URL. To serve at `/` on a different host, set `NEXT_PUBLIC_BASE_PATH=''` for the build.
+
+> `NEXT_PUBLIC_BASE_PATH` is embedded at build time. Set it consistently for development and production.
+
+## Persistence and privacy
+
+Everything is stored in browser `localStorage` under `ship-it:workspace:v4`. Earlier values under `chatgpt-agent-test:tasks:v1`, `v2` and `v3` are read on first load and migrated. Existing legacy keys are **not deleted**.
+
+Data stays in the current browser, so different devices do not sync automatically. Use **Export backup** and **Import** to move data. Import replaces the workspace only after confirmation.
 
 ## Deployment
 
-GitHub Pages automatically publishes new commits to the `main` branch via [GitHub Actions](./.github/workflows/deploy.yml).
+On every push to `main`, `.github/workflows/deploy.yml` installs dependencies, typechecks, runs tests, builds the static export, and publishes the `out/` directory through GitHub Pages.
 
-## About
-
-This repository is an experiment in creating, updating, and deploying real code using ChatGPT's GitHub integration rather than a local coding agent.
+This is a fully static Next.js application: features that require a Node server (API routes with runtime handlers, server actions, server-side auth, ISR) are intentionally excluded.
