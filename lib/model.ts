@@ -1,6 +1,6 @@
 export type Status = 'todo' | 'doing' | 'done';
 export type Priority = 'high' | 'medium' | 'low';
-export type View = 'dashboard' | 'board' | 'list' | 'calendar' | 'insights';
+export type View = 'dashboard' | 'board' | 'list' | 'calendar' | 'insights' | 'time';
 export interface Subtask { id: string; text: string; done: boolean }
 export interface Task {
   id: string;
