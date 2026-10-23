@@ -19,6 +19,8 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
  const workspaceRef=useRef(localWorkspace),timeRef=useRef(localTime);
  workspaceRef.current=localWorkspace;timeRef.current=localTime;
  const [dirty,setDirty]=useState(false);
+ const saving=useRef(false);
+ const [saveTick,setSaveTick]=useState(0);
  const load=useCallback(async(user:User)=>{
   if(loadingRef.current)return;
   loadingRef.current=true;accountRef.current=user.id;baseline.current='';setStage('loading');setError('');setStatus('Loading cloud workspace...');
@@ -73,23 +75,28 @@ export function useCloudWorkspace(localWorkspace:Workspace,localTime:TimeState,l
   if(snapshot===baseline.current){setDirty(false);return;}
   setDirty(true);setStatus('Unsaved changes...');
   const id=window.setTimeout(async()=>{
-   if(accountRef.current!==user.id)return;
+   if(accountRef.current!==user.id||saving.current)return;
+   saving.current=true;
    const expected=revision.current;
    setStatus('Saving to Supabase...');
    const savingWorkspace=workspaceRef.current,savingTime=timeRef.current;
    const submitted=JSON.stringify({workspace:savingWorkspace,time:savingTime});
-   const {data,error}=await supabase.from('shipit_workspaces')
-    .update({workspace:savingWorkspace,time_tracking:savingTime,revision:expected+1,updated_at:new Date().toISOString()})
-    .eq('user_id',user.id).eq('revision',expected).select('revision').maybeSingle();
-   if(accountRef.current!==user.id)return;
-   if(error){setError(error.message);setStatus('Save failed; local backup retained');return;}
-   if(!data){setError('Cloud data was updated elsewhere. Export a backup, then reload to avoid losing changes.');setStatus('Sync conflict');setStage('error');return;}
-   revision.current=Number(data.revision);
-   baseline.current=submitted;
-   setDirty(false);setError('');setStatus('Synced with Supabase');
+   try{
+    const {data,error}=await supabase.from('shipit_workspaces')
+     .update({workspace:savingWorkspace,time_tracking:savingTime,revision:expected+1,updated_at:new Date().toISOString()})
+     .eq('user_id',user.id).eq('revision',expected).select('revision').maybeSingle();
+    if(accountRef.current!==user.id)return;
+    if(error){setError(error.message);setStatus('Save failed — export backup and retry');return;}
+    if(!data){setError('Cloud data was updated elsewhere. Export a backup, then reload to avoid losing changes.');setStatus('Sync conflict');setStage('error');return;}
+    revision.current=Number(data.revision);
+    baseline.current=submitted;
+    const upToDate=JSON.stringify({workspace:workspaceRef.current,time:timeRef.current})===submitted;
+    setDirty(!upToDate);setError('');setStatus(upToDate?'Synced with Supabase':'More changes to save...');
+   }catch(err){setError(err instanceof Error?err.message:'Cloud save failed');setStatus('Save failed — export backup and retry');}
+   finally{saving.current=false;setSaveTick(x=>x+1);}
   },delay);
   return()=>window.clearTimeout(id);
- },[stage,user,localReady,timeReady,localWorkspace,localTime]);
+ },[stage,user,localReady,timeReady,localWorkspace,localTime,saveTick]);
  const signOut=useCallback(async()=>{if(dirty){setError('You have unsaved changes. Wait until sync completes or export a backup before signing out.');return;}const {error}=await supabase.auth.signOut();if(error)setError(error.message);},[dirty]);
  return {user,stage,status,error,init,signOut,load,dirty};
 }

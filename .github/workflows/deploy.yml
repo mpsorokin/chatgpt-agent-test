@@ -37,6 +37,9 @@ jobs:
         run: |
           test -f out/index.html
           test -d out/_next/static
+          for route in login register forgot-password reset-password auth/callback dashboard board tasks calendar insights time-tracking planning sprints; do
+            test -f "out/$route/index.html" || { echo "::error::Missing route $route"; exit 1; }
+          done
           grep -q '/_next/static/' out/index.html
           if grep -Eiq 'SHIP IT / 3[.]0|Ship It 3[.]0' out/index.html; then
             echo "::error::Legacy Ship It v3 was exported instead of Next.js"

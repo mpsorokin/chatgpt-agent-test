@@ -1,27 +1,92 @@
-# Ship It 6.0 — Supabase Cloud Workspace
+# Ship It 6.1 — routed Next.js App Router
 
-**[Live app](https://mpsorokin.github.io/chatgpt-agent-test/)**
+[Live application](https://mpsorokin.github.io/chatgpt-agent-test/) · [Supabase project](https://supabase.com/dashboard/project/nzoswtawxjjpnuygpska)
 
-## Cloud account & sync
+## Routes
 
-- Email/password registration and sign-in with Supabase Auth.
-- Per-user private PostgreSQL workspace, protected with owner-only RLS.
-- Autosave for tasks, projects, sprints, schedules, subtask checklists and time entries.
-- First-time import from earlier browser-local data with explicit user choice.
-- Optimistic revision checks to detect edits from another device. This is **not** real-time collaborative editing: simultaneous edits require manual conflict resolution.
-- JSON backup import/export is retained.
-- GitHub Pages deployment uses a public Supabase publishable key. No service role secrets are ever exposed.
+```
+app/
+  layout.tsx                      # global metadata / styles
+  page.tsx                        # signed-in redirect → /dashboard, else /login
+  not-found.tsx
+  (auth)/
+    layout.tsx
+    login/page.tsx
+    register/page.tsx
+    forgot-password/page.tsx
+    reset-password/page.tsx
+    auth/callback/page.tsx
+  (workspace)/
+    layout.tsx                    # shared client session / workspace shell
+    dashboard/page.tsx
+    board/page.tsx
+    tasks/page.tsx
+    calendar/page.tsx
+    insights/page.tsx
+    time-tracking/page.tsx
+    planning/page.tsx
+    sprints/page.tsx
+components/
+  auth/auth-form.tsx             # reusable auth screen
+  auth/auth-redirect.tsx
+  workspace-app.tsx              # persistent workspace layout / state
+  workspace-context.tsx          # typed state shared by routed pages
+  workspace-view.tsx             # route-to-feature composition
+  use-cloud-workspace.ts         # optimistic revision-protected sync
+lib/
+  routes.ts                      # typed route mapping / email redirects
+  supabase.ts
+  workspace.ts
+  planning.ts
+  storage.ts                     # legacy read-only browser migration
+```
 
-## Required Supabase dashboard configuration
+## Authentication and account recovery
 
-In **Authentication → URL Configuration**, set the Site URL to `https://mpsorokin.github.io/chatgpt-agent-test/` and add it to Redirect URLs. For local development add `http://localhost:3000/**` as well. Email confirmations may be required; enable Email in Authentication → Providers. Configure an SMTP provider for reliable production email delivery.
+- Supabase Auth email/password sign-in and registration, email confirmations, reset-password emails and password updates.
+- Signup email redirects to `/auth/callback/`; password recovery emails redirect to `/reset-password/`. The browser handles the Supabase session.
+- Unauthenticated workspace visits redirect to `/login/`. Authenticated visitors entering `/login/` are redirected to `/dashboard/`.
+- Shared workspace layout stays mounted during client-side route navigation; task state and active timers don't reset as the user moves between pages.
+- Private data is always fetched through Supabase with **per-user RLS** on `public.shipit_workspaces`.
+- Cloud state no longer mirrors all authenticated data to a common unscoped browser localStorage key. Old browser data is read *only* for explicit first-time import.
+- Optimistic revision check and serialized writes prevent overlapping writes from silently overwriting previous updates. Same-workspace simultaneous edits are not yet merged automatically.
 
-The database migration is stored in [`supabase/schema.sql`](./supabase/schema.sql) and was applied to project `nzoswtawxjjpnuygpska`.
+## Production Supabase configuration REQUIRED
 
-## Local development
+In the [Auth URL Configuration](https://supabase.com/dashboard/project/nzoswtawxjjpnuygpska/auth/url-configuration) set:
 
-Run `npm install` then `NEXT_PUBLIC_BASE_PATH='' npm run dev`. The Supabase publishable key is not a secret and authorization is strictly enforced via database RLS. Never add a secret/service-role key to the client.
+**Site URL**:
+`https://mpsorokin.github.io/chatgpt-agent-test/`
 
-## Existing app capabilities
+**Redirect allow-list**:
+```
+https://mpsorokin.github.io/chatgpt-agent-test/auth/callback/
+https://mpsorokin.github.io/chatgpt-agent-test/reset-password/
+http://localhost:3000/**
+```
 
-Dashboard, Kanban, task editor, project management, time tracking, reports, Gantt, calendar, planning, sprint management, burndown, insights, themes and exports.
+Confirm the Email provider is enabled and configure SMTP for reliable production mail.
+
+## Deployment and hosting constraint
+
+This project still deploys via **Next.js static export** to GitHub Pages with `basePath: '/chatgpt-agent-test'`. It has genuine App Router pages, but **does not run a Next.js server**. This means auth gating is client-side and the database, not middleware, enforces access control. This is safe for the current Supabase RLS-backed data model but is **not** equivalent to SSR session protection, server actions, or server route handlers.
+
+For full server-side production auth / protected SSR, move the deployment to Vercel or another Next.js Node-capable host and adopt `@supabase/ssr` (server/client creators, cookie handling, request-time checks). Do not attempt to add middleware/route handlers to GitHub Pages static export.
+
+The Supabase browser key in `lib/supabase.ts` is a **publishable** key; it is not a secret. Never include a service-role/secret key in client code.
+
+## Development
+
+```bash
+npm install
+NEXT_PUBLIC_BASE_PATH='' npm run dev
+npm run typecheck
+npm test
+npm run build
+```
+
+The project retains the existing tasks, Kanban, Gantt, sprint planning, time tracking, analytics, and JSON backup support.
+
+## Verification
+
+CI checks TypeScript, Vitest and the production static output of every route. Complete real-email, cross-browser and password-reset E2E testing remains to be performed with a test account.

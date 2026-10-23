@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Activity, ArrowRight, BarChart3, Bell, CalendarDays, Check, ChevronDown, Command, Download, FileJson, Filter, Flag, Github, Grip, Inbox, KanbanSquare, LayoutDashboard, ListTodo, Menu, Moon, Plus, Search, Settings2, Sparkles, Sun, Timer, Upload, X } from 'lucide-react';
 import { COLORS, dateKey, type Project, type Task, type TaskDraft, type View, type Workspace, type Status } from '@/lib/model';
-import { normalizeWorkspace, readWorkspace, writeWorkspace } from '@/lib/storage';
+import { normalizeWorkspace, readWorkspace } from '@/lib/storage';
 import { sortTasks, workspaceReducer } from '@/lib/workspace';
 import { TaskEditor } from './task-editor';
 import { BoardView, CalendarView, DashboardView, InsightsView, ListView } from './views';
@@ -29,7 +29,8 @@ function usePersistentWorkspace(){
    if(result.source==='unavailable')setStorageWarning('Browser storage is unavailable. Export tasks to keep a backup.');
    setReady(true);
  },[]);
- useEffect(()=>{if(ready && !writeWorkspace(window.localStorage,state))setStorageWarning('Changes could not be saved locally. Please export your tasks.');},[ready,state]);
+ // Older browser data remains readable for first-time migration, but
+ // authenticated cloud records are never mirrored to an anonymous storage key.
  return {state,dispatch,ready,storageWarning};
 }
 function timeGreeting(){const h=new Date().getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening'}

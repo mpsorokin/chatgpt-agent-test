@@ -18,11 +18,7 @@ export function useTimeTracking(){
   }catch{setWarning('Time tracking storage is unavailable or corrupt. Export a backup if needed.');}
   setNow(Date.now());setReady(true);
  },[]);
- useEffect(()=>{
-  if(!ready)return;
-  try{window.localStorage.setItem(TIME_STORAGE_KEY,JSON.stringify(time));}
-  catch{setWarning('Time entries could not be saved. Export a backup.');}
- },[time,ready]);
+ // Cloud data is stored in Supabase; don't copy it into a shared browser key.
  useEffect(()=>{
   if(!ready||!time.active)return;
   const id=window.setInterval(()=>setNow(Date.now()),1000);

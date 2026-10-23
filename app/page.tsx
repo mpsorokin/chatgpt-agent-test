@@ -1,2 +1,2 @@
-import WorkspaceApp from '@/components/workspace-app';
-export default function HomePage() { return <WorkspaceApp />; }
+import { RootRedirect } from '@/components/auth/auth-redirect';
+export default function HomePage(){return <RootRedirect/>;}
